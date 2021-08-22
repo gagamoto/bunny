@@ -1,0 +1,15 @@
+* { 
+    padding: 0; 
+    margin: 0; 
+    color: #321e8a;
+}
+
+canvas { 
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index:-1;
+    /* background: #000000;  */
+    /* display: block;  */
+    /* margin: 0 auto; */
+}
