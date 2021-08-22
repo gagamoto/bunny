@@ -1,6 +1,8 @@
 const SQUARE_ROOT_2 = 1.41421356237;
 const DEGREES = Math.PI/180;
 const SHGRAVITY = 6;
+const TURNING_DELAY = 400;
+
 const MAIN_CHAR = {
     SIZE: 50
 }
@@ -9,11 +11,12 @@ class Character{
     constructor(position, angle = 0){
         console.log(this);
         this.position = position;
-        this.direction = [-2, 0];
+        this.direction = [-3, 0];
         this.angle = angle;
         this.boost = 0;
 
         this.boosting = false;
+        this.turning = false;
 
         this.width = MAIN_CHAR.SIZE;
         this.height = MAIN_CHAR.SIZE;
@@ -77,7 +80,7 @@ class Game {
 
         // this.debugTime = 0;
         this.state = GAME_STATE.WAIT;
-        // this.state = GAME_STATE.PLAY; // DEBUG
+        this.state = GAME_STATE.PLAY; // DEBUG
         this.step = null;
         // this.lastScore = null;
         // this.score = 0;
@@ -132,6 +135,16 @@ class Game {
         this.step = this.step + 1;
 
         // Control
+        // -- U-turn
+        if (CTRL_spacePressed && !this.turning){
+            if (Date.now() - CTRL_spacePressedTime > TURNING_DELAY){
+                this.turning = true;
+                this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
+                // this.mainCharacter.boost = 0;
+            }
+        }
+
+        // -- Boost
         if (this.mainCharacter.direction[1] < SHGRAVITY){
             this.mainCharacter.direction[1] += 1;
         }
@@ -142,25 +155,29 @@ class Game {
             this.mainCharacter.boost = 16;
             this.boosting = true;
         }
+        if (this.mainCharacter.position[1] < 0){
+            this.mainCharacter.boost = 0;
+        }
         if (!CTRL_spacePressed){
             this.boosting = false;
-
+            this.turning = false;
         }
+
         // Movements
         this.mainCharacter.angle = this.mainCharacter.angle + 1 % 360; // DEBUG
         var newPosition = null;
 
-        // Horizontal
+        // -- Horizontal
         newPosition = this.mainCharacter.position[0] + this.mainCharacter.direction[0];
         if (
-            (newPosition + this.mainCharacter.width > this.canvas.width) || // witdh/2 or width ?
-            (newPosition - this.mainCharacter.width < 0)
+            (newPosition + this.mainCharacter.width/2 > this.canvas.width) || // witdh/2 or width ?
+            (newPosition - this.mainCharacter.width/2 < 0)
         ){
             this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
         }
         this.mainCharacter.position[0] = newPosition
 
-        // Vertical
+        // -- Vertical
         newPosition = this.mainCharacter.position[1] + this.mainCharacter.direction[1] - this.mainCharacter.boost;
         if (newPosition + this.mainCharacter.height/2 > this.canvas.height /*this.mainCharacter.height/2*/ ){
             this.mainCharacter.direction[1] = 0;
@@ -207,11 +224,17 @@ class Game {
 
 // Control
 var CTRL_spacePressed = false;
+var CTRL_spacePressedTime = null;
 
 function keyDownHandler(e){
     if (e.key == " "){
-        CTRL_spacePressed = true;
+        if (!CTRL_spacePressed){
+            CTRL_spacePressed = true;
+            CTRL_spacePressedTime = Date.now();
+        }
         console.debug("Spacebar is pressed"); //DEBUG
+        console.debug(CTRL_spacePressedTime); //DEBUG
+
     } 
 }
 
