@@ -170,12 +170,14 @@ class Game {
         // -- Horizontal
         newPosition = this.mainCharacter.position[0] + this.mainCharacter.direction[0];
         if (
-            (newPosition + this.mainCharacter.width/2 > this.canvas.width) || // witdh/2 or width ?
-            (newPosition - this.mainCharacter.width/2 < 0)
+            (newPosition - this.mainCharacter.width/4 > this.canvas.width) || // witdh/2 or width ?
+            (newPosition + this.mainCharacter.width/4 < 0)
         ){
-            this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
+            // this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
         }
-        this.mainCharacter.position[0] = newPosition
+        else {
+            this.mainCharacter.position[0] = newPosition
+        }
 
         // -- Vertical
         newPosition = this.mainCharacter.position[1] + this.mainCharacter.direction[1] - this.mainCharacter.boost;
@@ -251,10 +253,10 @@ function main() {
 
     // -- Canvas
     var mainCanvas = document.createElement("canvas");
-    // mainCanvas.width  = window.innerWidth;
-    // mainCanvas.height = window.innerHeight;
-    mainCanvas.width  = window.innerWidth * .9; // DEBUG
-    mainCanvas.height = window.innerHeight * .9; // DEBUG
+    mainCanvas.width  = window.innerWidth;
+    mainCanvas.height = window.innerHeight;
+    // mainCanvas.width  = window.innerWidth * .9; // DEBUG
+    // mainCanvas.height = window.innerHeight * .9; // DEBUG
     document.body.appendChild(mainCanvas);
 
     // -- Control
