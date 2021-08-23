@@ -78,21 +78,32 @@ class Game {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
 
-        // this.debugTime = 0;
-        this.state = GAME_STATE.WAIT;
-        this.state = GAME_STATE.PLAY; // DEBUG
-        this.step = null;
-        // this.lastScore = null;
-        // this.score = 0;
+        this.score = null;
+        this.lastScore = null;
 
+        this.reinit();
+    };
+
+    reinit(){
+        this.switchGameState(GAME_STATE.WAIT);
+        this.step = null;
         this.CTRL_spaceWasPressed = false;
 
         this.mainCharacter = new Character(
             [this.canvas.width/2, this.canvas.height/2]
         );
 
+        this.asteroids = [];
+        this.carrots = [];
+
+        this.waveNum = 0;
+
+        if (this.score) {
+            this.lastScore = this.score;
+            this.score = null;
+        }
         console.debug(this); // @TODO debug print state method
-    };
+    }
 
     run(){ // @TODO timestamp?
         // @TODO handle control : spaceWasReleased?
@@ -132,6 +143,19 @@ class Game {
     // Engine
     engine() {
         // Auto
+        // -- Waves
+        // ---- Asteroids
+        if (this.asteroids.length == 0){
+            console.debug("Init wave.");
+            var n = 3;
+            for (var i = 0; i < n; i++){
+                var asteroid = new Character(0,30*i)
+                asteroid.direction = [i+1,i+1];
+                this.asteroids.push(asteroid);
+            }
+            this.waveNum += 1;
+        }
+        // ---- Carrots
         this.step = this.step + 1;
 
         // Control
@@ -182,8 +206,10 @@ class Game {
         // -- Vertical
         newPosition = this.mainCharacter.position[1] + this.mainCharacter.direction[1] - this.mainCharacter.boost;
         if (newPosition + this.mainCharacter.height/2 > this.canvas.height /*this.mainCharacter.height/2*/ ){
-            this.mainCharacter.direction[1] = 0;
-            this.mainCharacter.position[1] = this.canvas.height - this.mainCharacter.height/2;
+            console.debug("Death.");
+            this.reinit();
+            // this.mainCharacter.direction[1] = 0;
+            // this.mainCharacter.position[1] = this.canvas.height - this.mainCharacter.height/2;
         }
         else{
             this.mainCharacter.position[1] = newPosition
@@ -200,6 +226,10 @@ class Game {
         else if (this.state == GAME_STATE.PLAY){
             this.drawBackground();
             this.mainCharacter.draw(this.ctx);
+
+            for (var asteroid of this.asteroids){
+                asteroid.draw(this.ctx);
+            }
         }
         // requestAnimationFrame(() => this.draw());
     }
