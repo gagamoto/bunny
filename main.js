@@ -2,16 +2,40 @@ const SQUARE_ROOT_2 = 1.41421356237;
 const DEGREES = Math.PI/180;
 const SHGRAVITY = 6;
 const TURNING_DELAY = 400;
-
+const VERTICAL_DELAY = 120; 
 const MAIN_CHAR = {
     SIZE: 50
+}
+
+class Asteroids{
+    constructor(position, color = "green", angle = 0){
+        console.log(this);
+        this.position = position;
+        this.direction = [0, 0];
+        this.angle = angle;
+
+        this.still_alive = true;
+        this.color = color;
+        this.diameter = MAIN_CHAR.SIZE * 1.5;
+    };
+
+    draw(ctx){
+        var width = this.diameter;
+
+        // Rotated square
+        ctx.beginPath();
+        ctx.fillStyle= this.color;
+        ctx.rect(this.position[0]-width/2,this.position[1]-width/2,width,width);
+        ctx.fill();
+        ctx.closePath();
+    };
 }
 
 class Character{
     constructor(position, angle = 0){
         console.log(this);
         this.position = position;
-        this.direction = [-3, 0];
+        this.direction = [4, 0];
         this.angle = angle;
         this.boost = 0;
 
@@ -25,14 +49,6 @@ class Character{
     draw(ctx){
         // Reference square
         var width = MAIN_CHAR.SIZE;
-        ctx.save();
-        ctx.beginPath();
-        ctx.translate(this.position[0], this.position[1]);
-        ctx.fillStyle= "blue";
-        ctx.rect(0-width/2,0-width/2,width,width);
-        ctx.fill();
-        ctx.closePath();
-        ctx.restore();
 
         // Rotated square
         ctx.save();
@@ -94,7 +110,7 @@ class Game {
         );
 
         this.asteroids = [];
-        this.carrots = [];
+        this.currentAsteroidsNum = 0;
 
         this.waveNum = 0;
 
@@ -145,18 +161,53 @@ class Game {
         // Auto
         // -- Waves
         // ---- Asteroids
-        if (this.asteroids.length == 0){
+        if (this.currentAsteroidsNum == 0){
             console.debug("Init wave.");
-            var n = 3;
+            this.asteroids = [];
+            var n = 3; // @TODO Random number
             for (var i = 0; i < n; i++){
-                var asteroid = new Character(0,30*i)
-                asteroid.direction = [i+1,i+1];
+                var asteroid = new Asteroids([100,0-i*100],"yellow"); // @TODO Random rainbow color
+                asteroid.direction[0] = 2*i+1; // @TODO random + random position also
                 this.asteroids.push(asteroid);
             }
+            this.currentAsteroidsNum = this.asteroids.length;
             this.waveNum += 1;
         }
-        // ---- Carrots
-        this.step = this.step + 1;
+
+        for (asteroid of this.asteroids){
+            if (!asteroid.still_alive){
+                continue;
+            }
+            if (asteroid.direction[1] < SHGRAVITY){
+                asteroid.direction[1] += 1;
+            }
+
+            // -- Horizontal
+            newPosition = asteroid.position[0] + asteroid.direction[0];
+            if (false){
+            //     (newPosition - this.mainCharacter.width/4 > this.canvas.width) || // witdh/2 or width ?
+            //     (newPosition + this.mainCharacter.width/4 < 0)
+            // ){
+                // this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
+            }
+            else {
+                asteroid.position[0] = newPosition
+            }
+
+            // -- Vertical
+            newPosition = asteroid.position[1] + asteroid.direction[1];
+            if (newPosition > this.canvas.height){
+                console.debug("Badaboum.");
+                asteroid.still_alive = false;
+                this.currentAsteroidsNum -= 1;
+                console.debug(this.currentAsteroidsNum);
+                console.debug(asteroid.position);
+            }
+            else{
+                asteroid.position[1] = newPosition
+            }
+        }
+
 
         // Control
         // -- U-turn
@@ -198,6 +249,12 @@ class Game {
             (newPosition + this.mainCharacter.width/4 < 0)
         ){
             // this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
+            if (this.mainCharacter.direction[0] > 0){
+                this.mainCharacter.position[0] = 0;
+            }
+            else{
+                this.mainCharacter.position[0] = this.canvas.width;
+            }
         }
         else {
             this.mainCharacter.position[0] = newPosition
@@ -264,8 +321,8 @@ function keyDownHandler(e){
             CTRL_spacePressed = true;
             CTRL_spacePressedTime = Date.now();
         }
-        console.debug("Spacebar is pressed"); //DEBUG
-        console.debug(CTRL_spacePressedTime); //DEBUG
+        // console.debug("Spacebar is pressed"); //DEBUG
+        // console.debug(CTRL_spacePressedTime); //DEBUG
 
     } 
 }
@@ -273,7 +330,7 @@ function keyDownHandler(e){
 function keyUpHandler(e){
     if (e.key == " "){
         CTRL_spacePressed = false;
-        console.debug("Spacebar is not pressed"); //DEBUG
+        // console.debug("Spacebar is not pressed"); //DEBUG
     } 
 }
 
