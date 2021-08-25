@@ -262,7 +262,7 @@ class Game {
 
         // -- Vertical
         newPosition = this.mainCharacter.position[1] + this.mainCharacter.direction[1] - this.mainCharacter.boost;
-        if (newPosition + this.mainCharacter.height/2 > this.canvas.height /*this.mainCharacter.height/2*/ ){
+        if (newPosition - this.mainCharacter.height > this.canvas.height /*this.mainCharacter.height/2*/ ){
             console.debug("Death.");
             this.reinit();
             // this.mainCharacter.direction[1] = 0;
