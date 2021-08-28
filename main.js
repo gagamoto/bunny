@@ -17,8 +17,8 @@ const RAINBOW = [
 const SQUARE_ROOT_2 = 1.41421356237;
 const DEGREES = Math.PI / 180;
 const SHGRAVITY = 6;
-const TURNING_DELAY = 400;
-const VERTICAL_DELAY = 120;
+const TURNING_DELAY = 350;
+const VERTICAL_DELAY = 300;
 const SIZES = {
     RABBIT: 32,
     ASTEROID: 30
@@ -36,7 +36,7 @@ class Asteroids {
 
         this.still_alive = true;
         this.color = color;
-        this.diameter = SIZES.RABBIT;
+        this.diameter = SIZES.RABBIT; // @TODO random size
     };
 
     draw(ctx) {
@@ -134,19 +134,6 @@ class Character {
         ctx.fill();
         ctx.stroke();
         ctx.closePath();
-
-        // // Tail
-        // ctx.beginPath();
-        // ctx.fillStyle = "pink";
-        // ctx.strokeStyle = "black";
-        // ctx.arc(
-        //     x - width / 2 + width * backward,
-        //     y + height / 6,
-        //     (width / 6) * SQUARE_ROOT_2,
-        //     0, Math.PI * 2, false);
-        // ctx.fill();
-        // ctx.stroke();
-        // ctx.closePath();
 
         // Body
         ctx.beginPath();
@@ -365,14 +352,18 @@ class Game {
         if (this.currentAsteroidsNum == 0) {
             // console.debug("Init wave.");
             this.asteroids = [];
-            let waveLength = 3 + Math.floor(Math.random() * (RAINBOW.length - 3)); // @TODO Random number
+            let waveLength = 3 + Math.floor(Math.random() * (RAINBOW.length - 3)); // @TODO Random number + difficulty per wave
 
             for (let i = 0; i < waveLength; i++) {
-                let color = RAINBOW[(i + waveLength) % RAINBOW.length]
-                let asteroid = new Asteroids(
-                    [100, 0 - i * 100],
-                    color);
-                asteroid.direction[0] = 2 * i + 1; // @TODO random + random position also
+                let color = null; // RAINBOW[(i + waveLength) % RAINBOW.length];
+                let x = 100;
+                let y = 0 - i * VERTICAL_DELAY; // @TODO add randomness to delay + difficulty per wave
+                let asteroid = new Asteroids([x, y], color);
+                let horizontalDirection = Math.floor(Math.random() * SHGRAVITY);
+                if (x > this.canvas.width / 2) {
+                    horizontalDirection = - horizontalDirection;
+                }
+                asteroid.direction[0] = horizontalDirection; // @TODO random + random position also
                 this.asteroids.push(asteroid);
             }
             this.currentAsteroidsNum = this.asteroids.length;
@@ -537,10 +528,10 @@ class Game {
         this.ctx.strokeStyle = "black";
         this.ctx.textAlign = "center";
         this.ctx.font = "20px Arial";
-        this.ctx.fillText("TAP SPACE", this.canvas.width / 4, this.canvas.height / 3);
-        this.ctx.fillText("TO GO UP", this.canvas.width / 4, this.canvas.height / 3 + 30);
-        this.ctx.fillText("PRESS SPACE", 3 * this.canvas.width / 4, this.canvas.height / 3);
-        this.ctx.fillText("TO GO BACK", 3 * this.canvas.width / 4, this.canvas.height / 3 + 30);
+        this.ctx.fillText("TAP SPACE", this.canvas.width / 4, this.canvas.height / 3+ 30);
+        this.ctx.fillText("TO GO UP", this.canvas.width / 4, this.canvas.height / 3 + 60);
+        this.ctx.fillText("PRESS SPACE", 3 * this.canvas.width / 4, this.canvas.height / 3+ 30);
+        this.ctx.fillText("TO GO BACK", 3 * this.canvas.width / 4, this.canvas.height / 3 + 60);
         this.ctx.font = "26px Arial";
 
         this.ctx.fillText("AVOID THE ASTEROIDS", this.canvas.width / 2, 3 * this.canvas.height / 4 + 30);
@@ -583,7 +574,7 @@ class Game {
     drawBackground() {
         // if (this.state == GAME_STATE.WAIT) {}
         // else if (this.state == GAME_STATE.PLAY) {}
-        let fadeSpeed = 500; // in steps
+        let fadeSpeed = 200; // in steps
         if (this.state == GAME_STATE.WAIT) {
             fadeSpeed = 80;
         }
