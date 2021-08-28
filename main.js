@@ -1,5 +1,13 @@
 const RAINBOW = [
-    "red",
+    //     "red",
+    //     "orange",
+    //     "yellow",
+    //     "green",
+    //     "blue",
+    //     "purple"
+    // ]
+    // const RAINBOW = [
+    "rgba(255,0,0,1)",
     "orange",
     "yellow",
     "green",
@@ -12,8 +20,8 @@ const SHGRAVITY = 6;
 const TURNING_DELAY = 400;
 const VERTICAL_DELAY = 120;
 const SIZES = {
-    RABBIT: 50,
-    ASTEROID: 50
+    RABBIT: 32,
+    ASTEROID: 30
 }
 const MAIN_CHAR = { // @TODO remove
     SIZE: 50
@@ -37,11 +45,11 @@ class Asteroids {
         let y = this.position[1];
 
         ctx.beginPath();
-        ctx.lineWidth = 2;
-        ctx.fillStyle = "black";
-        ctx.strokeStyle = "rgba(255,255,255,.4)";
+        ctx.lineWidth = 1;
+        ctx.fillStyle = "black"; // this.color;
+        ctx.strokeStyle = "white"; // this.color;
         ctx.arc(
-            x, // @TODO factorize the shift
+            x,
             y,
             (diameter / 2) * SQUARE_ROOT_2,
             0, Math.PI * 2, false);
@@ -54,10 +62,11 @@ class Asteroids {
 class Character {
     constructor(position, angle = 0) {
         this.position = position;
-        this.direction = [3, 0];
+        this.direction = [-3, 0];
         this.angle = angle;
         this.boost = 0;
 
+        this.fifouTail = [];
         this.boosting = false;
         this.turning = false;
 
@@ -75,6 +84,23 @@ class Character {
 
         ctx.lineWidth = 2;
 
+        // Tail
+        for (let i = 0; i < this.fifouTail.length; i++) {
+            ctx.beginPath();
+            let color = RAINBOW[this.fifouTail[i][2]];
+            let size = 10 - i;
+            // ctx.fillStyle = "black";
+            ctx.strokeStyle = color;
+            ctx.arc(
+                this.fifouTail[i][0] - width / 2 + width * backward,
+                this.fifouTail[i][1] + height / 6,
+                size * SQUARE_ROOT_2,
+                0, Math.PI * 2, false);
+            // ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+        }
+
         // Ear back
         ctx.beginPath();
         ctx.fillStyle = "white";
@@ -88,18 +114,18 @@ class Character {
         ctx.stroke();
         ctx.closePath();
 
-        // Tail
-        ctx.beginPath();
-        ctx.fillStyle = "pink";
-        ctx.strokeStyle = "black";
-        ctx.arc(
-            x - width / 2 + width * backward,
-            y + height / 6,
-            (width / 6) * SQUARE_ROOT_2,
-            0, Math.PI * 2, false);
-        ctx.fill();
-        ctx.stroke();
-        ctx.closePath();
+        // // Tail
+        // ctx.beginPath();
+        // ctx.fillStyle = "pink";
+        // ctx.strokeStyle = "black";
+        // ctx.arc(
+        //     x - width / 2 + width * backward,
+        //     y + height / 6,
+        //     (width / 6) * SQUARE_ROOT_2,
+        //     0, Math.PI * 2, false);
+        // ctx.fill();
+        // ctx.stroke();
+        // ctx.closePath();
 
         // Body
         ctx.beginPath();
@@ -314,11 +340,15 @@ class Game {
         // -- Waves
         // ---- Asteroids
         if (this.currentAsteroidsNum == 0) {
-            console.debug("Init wave.");
+            // console.debug("Init wave.");
             this.asteroids = [];
-            let n = 3; // @TODO Random number
-            for (let i = 0; i < n; i++) {
-                let asteroid = new Asteroids([100, 0 - i * 100], "yellow"); // @TODO Random rainbow color
+            let waveLength = 3 + Math.floor(Math.random() * (RAINBOW.length - 3)); // @TODO Random number
+
+            for (let i = 0; i < waveLength; i++) {
+                let color = RAINBOW[(i + waveLength) % RAINBOW.length]
+                let asteroid = new Asteroids(
+                    [100, 0 - i * 100],
+                    color);
                 asteroid.direction[0] = 2 * i + 1; // @TODO random + random position also
                 this.asteroids.push(asteroid);
             }
@@ -392,7 +422,22 @@ class Game {
         }
 
         // Movements
-        this.mainCharacter.angle = this.mainCharacter.angle + 1 % 360; // DEBUG
+        // this.mainCharacter.angle = this.mainCharacter.angle + 1 % 360; // DEBUG
+        // -- Tail
+        const stepSize = 6;
+        if (this.step % stepSize == 0) {
+            let tailIndex = this.step / stepSize % RAINBOW.length;
+
+            let position = Object.assign({}, this.mainCharacter.position);
+            this.mainCharacter.fifouTail.push(
+                [position[0], position[1], tailIndex]
+            );
+            if (this.mainCharacter.fifouTail.length > RAINBOW.length) {
+                this.mainCharacter.fifouTail.shift();
+            }
+        }
+
+
         let newPosition = null;
 
         // -- Horizontal
@@ -424,6 +469,7 @@ class Game {
         else {
             this.mainCharacter.position[1] = newPosition
         }
+
         // Survival
         if (this.collisions()) {
             console.debug("Death.");
