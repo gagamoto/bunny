@@ -13,7 +13,6 @@ const MAIN_CHAR = { // @TODO remove
 
 class Asteroids {
     constructor(position, color = "green", angle = 0) {
-        console.log(this);
         this.position = position;
         this.direction = [0, 0];
         this.angle = angle;
@@ -46,9 +45,8 @@ class Asteroids {
 
 class Character {
     constructor(position, angle = 0) {
-        console.log(this);
         this.position = position;
-        this.direction = [4, 0];
+        this.direction = [3, 0];
         this.angle = angle;
         this.boost = 0;
 
@@ -62,23 +60,12 @@ class Character {
     draw(ctx) {
         // Reference square
         let backward = (this.direction[0] < 0);
-        let width = this.width - 2;
-        let height = this.height - 2;
+        let width = this.width;
+        let height = this.height;
         let x = this.position[0];
         let y = this.position[1];
 
         ctx.lineWidth = 2;
-
-        // Rotated square
-        ctx.save();
-        ctx.beginPath();
-        ctx.translate(this.position[0], this.position[1]);
-        ctx.rotate(this.angle * DEGREES);
-        ctx.strokeStyle = "cyan";
-        ctx.rect(0 - width / 2, 0 - width / 2, width, width);
-        ctx.stroke();
-        ctx.closePath();
-        ctx.restore();
 
         // Ear back
         ctx.beginPath();
@@ -155,7 +142,7 @@ class Character {
             (width / 12) * SQUARE_ROOT_2,
             0, Math.PI * 2, false);
         // ctx.fill();
-        ctx.stroke();
+        // ctx.stroke();
         ctx.closePath();
 
         ctx.beginPath();
@@ -178,7 +165,7 @@ class Character {
             (width / 12) * SQUARE_ROOT_2,
             0, Math.PI * 2, false);
         // ctx.fill();
-        ctx.stroke();
+        // ctx.stroke();
         ctx.closePath();
 
         ctx.beginPath();
@@ -224,9 +211,7 @@ class Game {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
-
         this.score = null;
-        this.lastScore = null;
 
         this.reinit();
     };
@@ -245,16 +230,14 @@ class Game {
 
         this.waveNum = 0;
 
-        if (this.score) {
-            this.lastScore = this.score;
-            this.score = null;
-        }
         console.debug(this); // @TODO debug print state method
     }
 
     run() { // @TODO timestamp?
         // @TODO handle control : spaceWasReleased?
-        if (this.state == GAME_STATE.WAIT) {
+        this.step += 1;
+
+        if (this.state == GAME_STATE.WAIT && this.step > 60) {
             if (CTRL_spacePressed) {
                 this.CTRL_spaceWasPressed = true;
             }
@@ -279,7 +262,8 @@ class Game {
         }
         else if (this.state == GAME_STATE.PLAY) {
             console.debug("We are playing"); //DEBUG
-            this.step = 0
+            this.step = 0;
+            this.score = 0;
         }
 
         // Reset @TODO
@@ -293,7 +277,7 @@ class Game {
         // with asteroids
         for (let asteroid of this.asteroids) {
             let asteroidRadius = asteroid.diameter / 2;
-            let limitDistance = rabbitRadius + asteroidRadius;
+            let limitDistance = rabbitRadius + asteroidRadius; // + 2;
 
             let horizontalDistance = Math.abs(this.mainCharacter.position[0] - asteroid.position[0]);
             let verticalDistance = Math.abs(this.mainCharacter.position[1] - asteroid.position[1]);
@@ -319,7 +303,6 @@ class Game {
 
     engine() {
         // Auto
-        this.step += 1;
         // -- Waves
         // ---- Asteroids
         if (this.currentAsteroidsNum == 0) {
@@ -359,6 +342,7 @@ class Game {
             newPosition = asteroid.position[1] + asteroid.direction[1];
             if (newPosition > this.canvas.height) {
                 console.debug("Badaboum.");
+                this.score += 1;
                 asteroid.still_alive = false;
                 this.currentAsteroidsNum -= 1;
                 console.debug(this.currentAsteroidsNum);
@@ -442,27 +426,50 @@ class Game {
     // Graphics
     draw() {
         this.ctx.clearRect(0, 0, this.ctx.canvas.clientWidth, this.ctx.canvas.clientHeight);
+        this.drawBackground();
 
         if (this.state == GAME_STATE.WAIT) {
-            this.drawMainScreen();
-            this.mainCharacter.draw(this.ctx);
+            this.drawTheRainbow();
         }
-        else if (this.state == GAME_STATE.PLAY) {
-            this.drawBackground();
-            this.mainCharacter.draw(this.ctx);
 
-            for (let asteroid of this.asteroids) {
-                asteroid.draw(this.ctx);
-            }
+        this.mainCharacter.draw(this.ctx);
+        for (let asteroid of this.asteroids) {
+            asteroid.draw(this.ctx);
         }
+
+        this.drawScore();
+
         // requestAnimationFrame(() => this.draw());
     }
 
+    drawScore() {
+        if (this.score === null) { 
+            return;
+        }
+        this.ctx.beginPath();
+        this.ctx.fillStyle = "white";
+        this.ctx.strokeStyle = "black";
+        this.ctx.textAlign = "center";
+        this.ctx.font = "70px Helvetica";
+        this.ctx.fillText(this.score, this.canvas.width / 2, this.canvas.height / 4);
+        this.ctx.closePath();
+    }
+
     drawBackground() {
-        const fadeSpeed = 500;
+        // if (this.state == GAME_STATE.WAIT) {}
+        // else if (this.state == GAME_STATE.PLAY) {}
+        let fadeSpeed = 500; // in steps
+        if (this.state == GAME_STATE.WAIT) {
+            fadeSpeed = 80;
+        }
+
         let intensity = 1;
         if (this.step < fadeSpeed) {
             intensity = this.step % fadeSpeed / fadeSpeed; // Fade in blue
+        }
+
+        if (this.state == GAME_STATE.WAIT) {
+            intensity = 1 - intensity;
         }
 
         this.ctx.fillStyle = "rgba(0, 0, " + intensity * 40 + ", 1)";
@@ -471,10 +478,35 @@ class Game {
         // @TODO stars
     }
 
-    drawMainScreen() {
-        // @TODO
-        this.ctx.fillStyle = 'indigo';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    drawTheRainbow() {
+        this.ctx.beginPath();
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeStyle = "white";
+        this.ctx.moveTo(0, this.canvas.height * .7);
+        this.ctx.lineTo(this.canvas.width / 2, this.canvas.height / 2);
+        this.ctx.stroke();
+        this.ctx.closePath();
+
+        const rainbow = [
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "blue",
+            "purple"
+        ]
+        for (let i = 0; i < rainbow.length; i++) {
+            const girth = 10;
+            this.ctx.beginPath();
+            this.ctx.lineWidth = girth;
+            this.ctx.strokeStyle = rainbow[i];
+            this.ctx.moveTo(this.canvas.width / 2, this.canvas.height / 2);
+            this.ctx.lineTo(
+                this.canvas.width + girth,
+                - rainbow.length * girth / 2 + this.canvas.height * .7 + i * girth);
+            this.ctx.stroke();
+            this.ctx.closePath();
+        }
     }
 }
 
