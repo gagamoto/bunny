@@ -1,3 +1,11 @@
+const RAINBOW = [
+    "red",
+    "orange",
+    "yellow",
+    "green",
+    "blue",
+    "purple"
+]
 const SQUARE_ROOT_2 = 1.41421356237;
 const DEGREES = Math.PI / 180;
 const SHGRAVITY = 6;
@@ -439,11 +447,30 @@ class Game {
 
         this.drawScore();
 
+        if (this.state == GAME_STATE.WAIT) {
+            this.drawInstructions();
+        }
         // requestAnimationFrame(() => this.draw());
     }
 
+    drawInstructions() {
+        this.ctx.beginPath();
+        this.ctx.fillStyle = "white";
+        this.ctx.strokeStyle = "black";
+        this.ctx.textAlign = "center";
+        this.ctx.font = "20px Arial";
+        this.ctx.fillText("TAP SPACE", this.canvas.width / 4, this.canvas.height / 3);
+        this.ctx.fillText("TO GO UP", this.canvas.width / 4, this.canvas.height / 3 + 30);
+        this.ctx.fillText("PRESS SPACE", 3 * this.canvas.width / 4, this.canvas.height / 3);
+        this.ctx.fillText("TO GO BACK", 3 * this.canvas.width / 4, this.canvas.height / 3 + 30);
+        this.ctx.font = "26px Arial";
+
+        this.ctx.fillText("AVOID THE ASTEROIDS", this.canvas.width / 2, 3 * this.canvas.height / 4 + 30);
+        this.ctx.closePath();
+    }
+
     drawScore() {
-        if (this.score === null) { 
+        if (this.score === null) {
             return;
         }
         this.ctx.beginPath();
@@ -453,6 +480,26 @@ class Game {
         this.ctx.font = "70px Helvetica";
         this.ctx.fillText(this.score, this.canvas.width / 2, this.canvas.height / 4);
         this.ctx.closePath();
+
+        if (this.state == GAME_STATE.WAIT) {
+            const size = 140;
+
+            this.ctx.font = "20px Helvetica";
+            this.ctx.fillText("SCORE", this.canvas.width / 2, this.canvas.height / 4 - size / 2);
+
+            this.ctx.beginPath();
+            this.ctx.fillStyle = null;
+            this.ctx.strokeStyle = "white";
+            this.ctx.rect(
+                this.canvas.width / 2 - size / 2,
+                this.canvas.height / 4 - 3 * size / 4,
+                size,
+                size
+            );
+            // ctx.fill();
+            this.ctx.stroke();
+            this.ctx.closePath();
+        }
     }
 
     drawBackground() {
@@ -487,23 +534,15 @@ class Game {
         this.ctx.stroke();
         this.ctx.closePath();
 
-        const rainbow = [
-            "red",
-            "orange",
-            "yellow",
-            "green",
-            "blue",
-            "purple"
-        ]
-        for (let i = 0; i < rainbow.length; i++) {
+        for (let i = 0; i < RAINBOW.length; i++) {
             const girth = 10;
             this.ctx.beginPath();
             this.ctx.lineWidth = girth;
-            this.ctx.strokeStyle = rainbow[i];
+            this.ctx.strokeStyle = RAINBOW[i];
             this.ctx.moveTo(this.canvas.width / 2, this.canvas.height / 2);
             this.ctx.lineTo(
                 this.canvas.width + girth,
-                - rainbow.length * girth / 2 + this.canvas.height * .7 + i * girth);
+                - RAINBOW.length * girth / 2 + this.canvas.height * .7 + i * girth);
             this.ctx.stroke();
             this.ctx.closePath();
         }
