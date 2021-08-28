@@ -2,8 +2,12 @@ const SQUARE_ROOT_2 = 1.41421356237;
 const DEGREES = Math.PI/180;
 const SHGRAVITY = 6;
 const TURNING_DELAY = 400;
-const VERTICAL_DELAY = 120; 
-const MAIN_CHAR = {
+const VERTICAL_DELAY = 120;
+const SIZES = {
+    RABBIT: 50,
+    ASTEROID: 50
+}
+const MAIN_CHAR = { // @TODO remove
     SIZE: 50
 }
 
@@ -16,11 +20,11 @@ class Asteroids{
 
         this.still_alive = true;
         this.color = color;
-        this.diameter = MAIN_CHAR.SIZE * 1.5;
+        this.diameter = SIZES.RABBIT;
     };
 
     draw(ctx){
-        var width = this.diameter;
+        let width = this.diameter;
 
         // Rotated square
         ctx.beginPath();
@@ -42,13 +46,13 @@ class Character{
         this.boosting = false;
         this.turning = false;
 
-        this.width = MAIN_CHAR.SIZE;
-        this.height = MAIN_CHAR.SIZE;
+        this.width = SIZES.RABBIT;
+        this.height = SIZES.RABBIT;
     };
 
     draw(ctx){
         // Reference square
-        var width = MAIN_CHAR.SIZE;
+        let width = this.width;
 
         // Rotated square
         ctx.save();
@@ -157,16 +161,39 @@ class Game {
     }
 
     // Engine
+    collisions(){
+        let rabbitRadius = this.mainCharacter.width / 2;
+
+        // with asteroids
+        for (let asteroid of this.asteroids){
+            let asteroidRadius = asteroid.diameter / 2;
+
+            let limitSquareDistance = (rabbitRadius + asteroidRadius) * (rabbitRadius + asteroidRadius);
+            let squareHorizontal = Math.abs(this.mainCharacter.position[0] - asteroid.position[0]);
+            squareHorizontal = squareHorizontal * squareHorizontal
+            let squareVertical = Math.abs(this.mainCharacter.position[1] - asteroid.position[1]);
+            squareVertical = squareVertical * squareVertical
+            let squareDistance = squareHorizontal + squareVertical;
+
+            if (squareDistance < limitSquareDistance){
+                return true;
+            }
+        }
+        // with the floor
+        return false;
+    }
+
     engine() {
         // Auto
+        this.step += 1;
         // -- Waves
         // ---- Asteroids
         if (this.currentAsteroidsNum == 0){
             console.debug("Init wave.");
             this.asteroids = [];
-            var n = 3; // @TODO Random number
-            for (var i = 0; i < n; i++){
-                var asteroid = new Asteroids([100,0-i*100],"yellow"); // @TODO Random rainbow color
+            let n = 3; // @TODO Random number
+            for (let i = 0; i < n; i++){
+                let asteroid = new Asteroids([100,0-i*100],"yellow"); // @TODO Random rainbow color
                 asteroid.direction[0] = 2*i+1; // @TODO random + random position also
                 this.asteroids.push(asteroid);
             }
@@ -240,7 +267,7 @@ class Game {
 
         // Movements
         this.mainCharacter.angle = this.mainCharacter.angle + 1 % 360; // DEBUG
-        var newPosition = null;
+        let newPosition = null;
 
         // -- Horizontal
         newPosition = this.mainCharacter.position[0] + this.mainCharacter.direction[0];
@@ -271,6 +298,11 @@ class Game {
         else{
             this.mainCharacter.position[1] = newPosition
         }
+        // Survival
+        if (this.collisions()){
+            console.debug("Death.");
+            this.reinit();
+        }
     };
 
     // Graphics
@@ -284,7 +316,7 @@ class Game {
             this.drawBackground();
             this.mainCharacter.draw(this.ctx);
 
-            for (var asteroid of this.asteroids){
+            for (let asteroid of this.asteroids){
                 asteroid.draw(this.ctx);
             }
         }
@@ -293,7 +325,7 @@ class Game {
 
     drawBackground(){
         const fadeSpeed = 500;
-        var intensity = 1;
+        let intensity = 1;
         if (this.step < fadeSpeed){
             intensity = this.step % fadeSpeed / fadeSpeed; // Fade in blue
         }
@@ -339,7 +371,7 @@ function main() {
     console.debug("Hello, World!"); //DEBUG
 
     // -- Canvas
-    var mainCanvas = document.createElement("canvas");
+    let mainCanvas = document.createElement("canvas");
     mainCanvas.width  = window.innerWidth;
     mainCanvas.height = window.innerHeight;
     // mainCanvas.width  = window.innerWidth * .9; // DEBUG
@@ -352,9 +384,9 @@ function main() {
 
     // Run
     console.debug("Let's run!"); //DEBUG
-    var mainGame = new Game(mainCanvas);
+    let mainGame = new Game(mainCanvas);
     mainGame.run();
-    // var interval = setInterval(() => mainGame.run(), 100); // @TODO clear interval (Chrome)
+    // let interval = setInterval(() => mainGame.run(), 100); // @TODO clear interval (Chrome)
     // mainGame.draw()
 }
 
