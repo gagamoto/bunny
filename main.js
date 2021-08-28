@@ -167,12 +167,20 @@ class Game {
         // with asteroids
         for (let asteroid of this.asteroids){
             let asteroidRadius = asteroid.diameter / 2;
+            let limitDistance = rabbitRadius + asteroidRadius;
 
+            let horizontalDistance = Math.abs(this.mainCharacter.position[0] - asteroid.position[0]);
+            let verticalDistance = Math.abs(this.mainCharacter.position[1] - asteroid.position[1]);
+
+            // too far (safe zone)
+            if ( (horizontalDistance > limitDistance) || (verticalDistance > limitDistance) ){
+                continue;
+            }
+
+            // close enough (danger zone)
             let limitSquareDistance = (rabbitRadius + asteroidRadius) * (rabbitRadius + asteroidRadius);
-            let squareHorizontal = Math.abs(this.mainCharacter.position[0] - asteroid.position[0]);
-            squareHorizontal = squareHorizontal * squareHorizontal
-            let squareVertical = Math.abs(this.mainCharacter.position[1] - asteroid.position[1]);
-            squareVertical = squareVertical * squareVertical
+            let squareHorizontal = horizontalDistance * horizontalDistance;
+            let squareVertical = verticalDistance * verticalDistance;
             let squareDistance = squareHorizontal + squareVertical;
 
             if (squareDistance < limitSquareDistance){
@@ -201,7 +209,7 @@ class Game {
             this.waveNum += 1;
         }
 
-        for (asteroid of this.asteroids){
+        for (let asteroid of this.asteroids){
             if (!asteroid.still_alive){
                 continue;
             }
@@ -210,7 +218,7 @@ class Game {
             }
 
             // -- Horizontal
-            newPosition = asteroid.position[0] + asteroid.direction[0];
+            let newPosition = asteroid.position[0] + asteroid.direction[0];
             if (false){
             //     (newPosition - this.mainCharacter.width/4 > this.canvas.width) || // witdh/2 or width ?
             //     (newPosition + this.mainCharacter.width/4 < 0)
