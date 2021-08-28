@@ -24,13 +24,22 @@ class Asteroids {
     };
 
     draw(ctx) {
-        let width = this.diameter;
+        let diameter = this.diameter;
 
-        // Rotated square
+        let x = this.position[0];
+        let y = this.position[1];
+
         ctx.beginPath();
-        ctx.fillStyle = this.color;
-        ctx.rect(this.position[0] - width / 2, this.position[1] - width / 2, width, width);
+        ctx.lineWidth = 2;
+        ctx.fillStyle = "black";
+        ctx.strokeStyle = "rgba(255,255,255,.4)";
+        ctx.arc(
+            x, // @TODO factorize the shift
+            y,
+            (diameter / 2) * SQUARE_ROOT_2,
+            0, Math.PI * 2, false);
         ctx.fill();
+        ctx.stroke();
         ctx.closePath();
     };
 }
@@ -66,7 +75,7 @@ class Character {
         ctx.translate(this.position[0], this.position[1]);
         ctx.rotate(this.angle * DEGREES);
         ctx.strokeStyle = "cyan";
-        ctx.rect(0-width/2,0-width/2,width,width);
+        ctx.rect(0 - width / 2, 0 - width / 2, width, width);
         ctx.stroke();
         ctx.closePath();
         ctx.restore();
@@ -498,8 +507,9 @@ function main() {
 
     // -- Canvas
     let mainCanvas = document.createElement("canvas");
-    mainCanvas.width = window.innerWidth;
     mainCanvas.height = window.innerHeight;
+    mainCanvas.width = mainCanvas.height;
+    // mainCanvas.width = window.innerWidth;
     // mainCanvas.width  = window.innerWidth * .9; // DEBUG
     // mainCanvas.height = window.innerHeight * .9; // DEBUG
     document.body.appendChild(mainCanvas);
