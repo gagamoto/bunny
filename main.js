@@ -1,12 +1,4 @@
 const RAINBOW = [
-    //     "red",
-    //     "orange",
-    //     "yellow",
-    //     "green",
-    //     "blue",
-    //     "purple"
-    // ]
-    // const RAINBOW = [
     "rgba(255,0,0,1)",
     "orange",
     "rgba(255,255,0,1)",
@@ -22,9 +14,6 @@ const VERTICAL_DELAY = 300;
 const SIZES = {
     RABBIT: 32,
     ASTEROID: 30
-}
-const MAIN_CHAR = { // @TODO remove
-    SIZE: 50
 }
 
 class Asteroids {
@@ -418,28 +407,32 @@ class Game {
 
             // -- Horizontal
             let newPosition = asteroid.position[0] + asteroid.direction[0];
-            if (false) {
-                //     (newPosition - this.mainCharacter.width/4 > this.canvas.width) || // witdh/2 or width ?
-                //     (newPosition + this.mainCharacter.width/4 < 0)
-                // ){
-                // this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
-            }
+            if (false) { }
             else {
                 asteroid.position[0] = newPosition
             }
 
             // -- Vertical
             newPosition = asteroid.position[1] + asteroid.direction[1];
-            if (newPosition > this.canvas.height) {
-                console.debug("Badaboum.");
-                this.score += 1;
-                asteroid.still_alive = false;
-                this.currentAsteroidsNum -= 1;
-                console.debug(this.currentAsteroidsNum);
-                console.debug(asteroid.position);
-            }
+            if (false) { }
             else {
                 asteroid.position[1] = newPosition
+            }
+
+            // -- Badaboum
+            if (
+                (asteroid.position[1] > this.canvas.height) ||
+                (asteroid.position[0] > this.canvas.width) ||
+                (asteroid.position[0] < 0)
+            ) {
+                console.debug("Badaboum."); // DEBUG
+                if (asteroid.position[1] > 0) {
+                    this.score += 1; // only on-screen crashes are scored, earlier crashes are discarded
+                }
+                asteroid.still_alive = false;
+                this.currentAsteroidsNum -= 1;
+                console.debug(this.currentAsteroidsNum); // DEBUG
+                console.debug(asteroid.position); // DEBUG
             }
         }
 
@@ -492,16 +485,20 @@ class Game {
         // -- Horizontal
         newPosition = this.mainCharacter.position[0] + this.mainCharacter.direction[0];
         if (
-            (newPosition - this.mainCharacter.width / 4 > this.canvas.width) || // witdh/2 or width ?
+            (newPosition - this.mainCharacter.width / 4 > this.canvas.width) ||
             (newPosition + this.mainCharacter.width / 4 < 0)
         ) {
-            // this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
-            if (this.mainCharacter.direction[0] > 0) {
-                this.mainCharacter.position[0] = 0;
-            }
-            else {
-                this.mainCharacter.position[0] = this.canvas.width;
-            }
+            // -- Auto turn
+            this.turning = true;
+            this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
+
+            // -- Passthrough
+            // if (this.mainCharacter.direction[0] > 0) {
+            //     this.mainCharacter.position[0] = 0;
+            // }
+            // else {
+            //     this.mainCharacter.position[0] = this.canvas.width;
+            // }
         }
         else {
             this.mainCharacter.position[0] = newPosition
@@ -665,7 +662,6 @@ function keyDownHandler(e) {
         }
         // console.debug("Spacebar is pressed"); //DEBUG
         // console.debug(CTRL_spacePressedTime); //DEBUG
-
     }
 }
 
@@ -678,7 +674,7 @@ function keyUpHandler(e) {
 
 function main() {
     // Initialization
-    console.debug("Hello, World!"); //DEBUG
+    // console.debug("Hello, World!"); //DEBUG
 
     // -- Canvas
     let mainCanvas = document.createElement("canvas");
@@ -694,7 +690,7 @@ function main() {
     console.debug("Let's run!"); //DEBUG
     let mainGame = new Game(mainCanvas);
     mainGame.run();
-    // let interval = setInterval(() => mainGame.run(), 100); // @TODO clear interval (Chrome)
+    // let interval = setInterval(() => mainGame.run(), 100);
     // mainGame.draw()
 }
 
