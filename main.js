@@ -24,12 +24,14 @@ class Asteroids {
         this.fifouTail = [];
 
         this.still_alive = true;
+        this.funeralStep = 0;
+
         this.color = color;
         let randomGrowth = Math.random() * SIZES.RABBIT * 2 - SIZES.RABBIT;
         this.diameter = Math.max(SIZES.RABBIT + randomGrowth, SIZES.RABBIT / 2);
     };
 
-    draw(ctx) {
+    draw(ctx, currentStep = 0) {
         let diameter = this.diameter;
 
         let x = this.position[0];
@@ -71,16 +73,18 @@ class Asteroids {
             ctx.closePath();
         }
         else {
+            let delta = 8;
+            diameter = this.diameter + (currentStep - this.funeralStep) * delta;
             ctx.beginPath();
             ctx.lineWidth = 1;
-            ctx.fillStyle = "pink"; // this.color;
-            ctx.strokeStyle = "white"; // this.color;
+            // ctx.fillStyle = "pink"; // this.color;
+            ctx.strokeStyle = this.color;
             ctx.arc(
                 x,
                 y,
                 (diameter / 2) * SQUARE_ROOT_2,
                 0, Math.PI * 2, false);
-            ctx.fill();
+            // ctx.fill();
             ctx.stroke();
             ctx.closePath();
         }
@@ -371,7 +375,7 @@ class Game {
             let waveLength = 3 + Math.floor(Math.random() * (RAINBOW.length - 3)); // @TODO Random number + difficulty per wave
 
             for (let i = 0; i < waveLength; i++) {
-                let color = null; // RAINBOW[(i + waveLength) % RAINBOW.length];
+                let color = RAINBOW[this.waveNum % RAINBOW.length];
                 let x = Math.floor(Math.random() * (this.canvas.width / 2) + (this.canvas.width / 4));
                 let y = 0 - i * VERTICAL_DELAY; // @TODO add randomness to delay + difficulty per wave
                 let asteroid = new Asteroids([x, y], color);
@@ -430,6 +434,7 @@ class Game {
                     this.score += 1; // only on-screen crashes are scored, earlier crashes are discarded
                 }
                 asteroid.still_alive = false;
+                asteroid.funeralStep = this.step;
                 this.currentAsteroidsNum -= 1;
                 console.debug(this.currentAsteroidsNum); // DEBUG
                 console.debug(asteroid.position); // DEBUG
@@ -534,7 +539,7 @@ class Game {
 
         this.mainCharacter.draw(this.ctx);
         for (let asteroid of this.asteroids) {
-            asteroid.draw(this.ctx);
+            asteroid.draw(this.ctx, this.step);
         }
 
         this.drawScore();
