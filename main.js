@@ -370,7 +370,10 @@ class Game {
 
         // Asteroids waves
         // -- Clean-up
-        if (this.asteroidCorpses.length > RAINBOW.length) { 
+        if (
+            (this.asteroidCorpses.length > RAINBOW.length) ||
+            (this.step - this.asteroidCorpses[0].funeralStep > 60)
+         ) { 
             this.asteroidCorpses.shift;
         }
 
