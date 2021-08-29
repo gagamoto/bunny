@@ -582,8 +582,7 @@ class Game {
             this.mainCharacter.falling = 30 * this.mainCharacter.powerMalus;
             // this.mainCharacter.direction[0] = 0;
             this.mainCharacter.boost = 16;
-            this.score = Math.max(0, this.score - 20);
-            // this.reinit();
+            // this.score = Math.max(0, this.score - 20);
         }
     };
 
@@ -683,14 +682,13 @@ class Game {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.closePath();
 
-        if (this.state == GAME_STATE.WAIT) {
-            this.ctx.beginPath();
-            this.ctx.strokeStyle = "white";
-            this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
-            this.ctx.stroke();
-            this.ctx.closePath();
-
-        }
+        // if (this.state == GAME_STATE.WAIT) {
+        //     this.ctx.beginPath();
+        //     this.ctx.strokeStyle = "white";
+        //     this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
+        //     this.ctx.stroke();
+        //     this.ctx.closePath();
+        // }
     }
 
     drawTheRainbow() {
