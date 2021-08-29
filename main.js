@@ -62,20 +62,34 @@ class Asteroids {
                 ctx.stroke();
                 ctx.closePath();
             }
-        }
 
-        ctx.beginPath();
-        ctx.lineWidth = 1;
-        ctx.fillStyle = "black"; // this.color;
-        ctx.strokeStyle = "white"; // this.color;
-        ctx.arc(
-            x,
-            y,
-            (diameter / 2) * SQUARE_ROOT_2,
-            0, Math.PI * 2, false);
-        ctx.fill();
-        ctx.stroke();
-        ctx.closePath();
+            ctx.beginPath();
+            ctx.lineWidth = 1;
+            ctx.fillStyle = "black"; // this.color;
+            ctx.strokeStyle = "white"; // this.color;
+            ctx.arc(
+                x,
+                y,
+                (diameter / 2) * SQUARE_ROOT_2,
+                0, Math.PI * 2, false);
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+        }
+        else {
+            ctx.beginPath();
+            ctx.lineWidth = 1;
+            ctx.fillStyle = "pink"; // this.color;
+            ctx.strokeStyle = "white"; // this.color;
+            ctx.arc(
+                x,
+                y,
+                (diameter / 2) * SQUARE_ROOT_2,
+                0, Math.PI * 2, false);
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+        }
     };
 }
 
@@ -356,7 +370,7 @@ class Game {
 
             for (let i = 0; i < waveLength; i++) {
                 let color = null; // RAINBOW[(i + waveLength) % RAINBOW.length];
-                let x = 100;
+                let x = Math.floor(Math.random() * (this.canvas.width / 2) + (this.canvas.width / 4));
                 let y = 0 - i * VERTICAL_DELAY; // @TODO add randomness to delay + difficulty per wave
                 let asteroid = new Asteroids([x, y], color);
                 let horizontalDirection = Math.floor(Math.random() * SHGRAVITY);
@@ -528,9 +542,9 @@ class Game {
         this.ctx.strokeStyle = "black";
         this.ctx.textAlign = "center";
         this.ctx.font = "20px Arial";
-        this.ctx.fillText("TAP SPACE", this.canvas.width / 4, this.canvas.height / 3+ 30);
+        this.ctx.fillText("TAP SPACE", this.canvas.width / 4, this.canvas.height / 3 + 30);
         this.ctx.fillText("TO GO UP", this.canvas.width / 4, this.canvas.height / 3 + 60);
-        this.ctx.fillText("PRESS SPACE", 3 * this.canvas.width / 4, this.canvas.height / 3+ 30);
+        this.ctx.fillText("PRESS SPACE", 3 * this.canvas.width / 4, this.canvas.height / 3 + 30);
         this.ctx.fillText("TO GO BACK", 3 * this.canvas.width / 4, this.canvas.height / 3 + 60);
         this.ctx.font = "26px Arial";
 
@@ -588,10 +602,19 @@ class Game {
             intensity = 1 - intensity;
         }
 
+        this.ctx.beginPath();
         this.ctx.fillStyle = "rgba(0, 0, " + intensity * 40 + ", 1)";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.closePath();
 
-        // @TODO stars
+        if (this.state == GAME_STATE.WAIT) {
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = "white";
+            this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.stroke();
+            this.ctx.closePath();
+
+        }
     }
 
     drawTheRainbow() {
@@ -648,10 +671,7 @@ function main() {
     // -- Canvas
     let mainCanvas = document.createElement("canvas");
     mainCanvas.height = window.innerHeight;
-    mainCanvas.width = mainCanvas.height;
-    // mainCanvas.width = window.innerWidth;
-    // mainCanvas.width  = window.innerWidth * .9; // DEBUG
-    // mainCanvas.height = window.innerHeight * .9; // DEBUG
+    mainCanvas.width = Math.min(window.innerHeight, 750); // mainCanvas.width = window.innerWidth;
     document.body.appendChild(mainCanvas);
 
     // -- Control
