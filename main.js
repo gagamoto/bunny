@@ -381,13 +381,21 @@ class Game {
             let squareDistance = squareHorizontal + squareVertical;
 
             if (squareDistance < limitSquareDistance) {
-                asteroid.still_alive = false;
-                asteroid.funeralStep = this.step;
+                this.badaboum(asteroid)
                 return true;
             }
         }
 
         return false;
+    }
+
+    badaboum(asteroid) {
+        if (asteroid.position[1] > 0) {
+            this.score += 1; // only on-screen crashes are scored, earlier crashes are discarded
+        }
+        asteroid.still_alive = false;
+        asteroid.funeralStep = this.step;
+        this.currentAsteroidsNum -= 1;
     }
 
     engine() {
@@ -470,14 +478,7 @@ class Game {
                 (asteroid.position[0] < 0)
             ) {
                 console.debug("Badaboum."); // DEBUG
-                if (asteroid.position[1] > 0) {
-                    this.score += 1; // only on-screen crashes are scored, earlier crashes are discarded
-                }
-                asteroid.still_alive = false;
-                asteroid.funeralStep = this.step;
-                this.currentAsteroidsNum -= 1;
-                // console.debug(this.currentAsteroidsNum); // DEBUG
-                // console.debug(asteroid.position); // DEBUG
+                this.badaboum(asteroid);
             }
         }
 
@@ -513,6 +514,9 @@ class Game {
         }
         if (this.mainCharacter.boost > 0) {
             this.mainCharacter.boost -= 1;
+        }
+        if (this.mainCharacter.falling > 0) {
+            this.mainCharacter.falling -= 1;
         }
 
         // -- Tail
@@ -571,8 +575,8 @@ class Game {
         // Survival
         if (this.collisions()) {
             console.debug("Immminent death.");
-            this.mainCharacter.falling = true;
-            this.mainCharacter.direction[0] = 0;
+            this.mainCharacter.falling = 60;
+            // this.mainCharacter.direction[0] = 0;
             this.mainCharacter.boost = 20;
             // this.reinit();
         }
