@@ -11,7 +11,7 @@ const DEGREES = Math.PI / 180;
 const SHGRAVITY = 6;
 const CRUISE_SPEED = 3;
 const TURNING_DELAY = 350;
-const VERTICAL_DELAY = 300;
+const VERTICAL_DELAY = 200;
 const SIZES = {
     RABBIT: 32,
     ASTEROID: 30
@@ -420,7 +420,8 @@ class Game {
 
             // console.debug("Init wave.");
             this.asteroids = [];
-            let waveLength = 3 + Math.floor(Math.random() * (RAINBOW.length - 3)); // @TODO Random number + difficulty per wave
+            const minNumAsteroids = 5;
+            let waveLength = minNumAsteroids + Math.floor(Math.random() * (RAINBOW.length - minNumAsteroids)); // @TODO Random number + difficulty per wave
 
             for (let i = 0; i < waveLength; i++) {
                 let color = RAINBOW[this.waveNum % RAINBOW.length];
@@ -575,9 +576,10 @@ class Game {
         // Survival
         if (this.collisions()) {
             console.debug("Immminent death.");
-            this.mainCharacter.falling = 60;
+            this.mainCharacter.falling = 120;
             // this.mainCharacter.direction[0] = 0;
-            this.mainCharacter.boost = 20;
+            this.mainCharacter.boost = 16;
+            this.score = Math.max(0, this.score - 10);
             // this.reinit();
         }
     };
