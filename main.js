@@ -9,6 +9,7 @@ const RAINBOW = [
 const SQUARE_ROOT_2 = 1.41421356237;
 const DEGREES = Math.PI / 180;
 const SHGRAVITY = 6;
+const CRUISE_SPEED = 3;
 const TURNING_DELAY = 350;
 const VERTICAL_DELAY = 300;
 const SIZES = {
@@ -73,10 +74,13 @@ class Asteroids {
             ctx.closePath();
         }
         else {
-            let delta = 8;
-            diameter = this.diameter + (currentStep - this.funeralStep) * delta;
+            let delta = 4;
+            diameter = 10 + (currentStep - this.funeralStep) * delta;
+            if (diameter > 150) {
+                return;
+            }
             ctx.beginPath();
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 2;
             // ctx.fillStyle = "pink"; // this.color;
             ctx.strokeStyle = this.color;
             ctx.arc(
@@ -94,13 +98,14 @@ class Asteroids {
 class Character {
     constructor(position, angle = 0) {
         this.position = position;
-        this.direction = [-3, 0];
+        this.direction = [-CRUISE_SPEED, 0];
         this.angle = angle;
         this.boost = 0;
 
-        this.fifouTail = [];
+        this.fifouTail = []; // drawing only
         this.boosting = false;
         this.turning = false;
+        this.falling = 0;
 
         this.width = SIZES.RABBIT;
         this.height = SIZES.RABBIT;
@@ -108,7 +113,7 @@ class Character {
         this.waitShift = 0;
     };
 
-    draw(ctx) {
+    draw(ctx, currentStep = 0) {
         // Reference square
         let backward = (this.direction[0] < 0);
         let width = this.width;
@@ -150,11 +155,15 @@ class Character {
         ctx.closePath();
 
         // Body
+        let shift = 0;
+        if (this.falling) {
+            shift = Math.sin(currentStep) * 2;
+        }
         ctx.beginPath();
         ctx.fillStyle = "white";
         ctx.strokeStyle = "black";
         ctx.rect(
-            x - width / 2,
+            x - width / 2 + shift,
             y - width / 2,
             width,
             width
@@ -189,50 +198,57 @@ class Character {
         ctx.closePath();
 
         // Eye left
-        ctx.beginPath();
-        ctx.fillStyle = "white";
-        ctx.strokeStyle = "black";
-        ctx.arc(
-            x, // + (width / 6) * backward - (width / 6) * !backward, // @TODO factorize the shift
-            y,
-            (width / 12) * SQUARE_ROOT_2,
-            0, Math.PI * 2, false);
-        // ctx.fill();
-        // ctx.stroke();
-        ctx.closePath();
+        if (this.falling) {
 
-        ctx.beginPath();
-        ctx.fillStyle = "black";
-        ctx.arc(
-            x,
-            y,
-            (width / 32) * SQUARE_ROOT_2,
-            0, Math.PI * 2, false);
-        ctx.fill();
-        ctx.closePath();
+            ctx.beginPath();
+            ctx.fillStyle = "white";
+            ctx.strokeStyle = "black";
+            ctx.arc(
+                x, // + (width / 6) * backward - (width / 6) * !backward, // @TODO factorize the shift
+                y,
+                (width / 12) * SQUARE_ROOT_2,
+                0, Math.PI * 2, false);
+            // ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+        }
+        else {
+            ctx.beginPath();
+            ctx.fillStyle = "black";
+            ctx.arc(
+                x,
+                y,
+                (width / 32) * SQUARE_ROOT_2,
+                0, Math.PI * 2, false);
+            ctx.fill();
+            ctx.closePath();
+        }
+
 
         // Eye right
-        ctx.beginPath();
-        ctx.fillStyle = "white";
-        ctx.strokeStyle = "black";
-        ctx.arc(
-            x + (width / 3) * !backward - (width / 3) * backward, // @TODO factorize the shift
-            y,
-            (width / 12) * SQUARE_ROOT_2,
-            0, Math.PI * 2, false);
-        // ctx.fill();
-        // ctx.stroke();
-        ctx.closePath();
-
-        ctx.beginPath();
-        ctx.fillStyle = "black";
-        ctx.arc(
-            x + (width / 3) * !backward - (width / 3) * backward,
-            y,
-            (width / 32) * SQUARE_ROOT_2,
-            0, Math.PI * 2, false);
-        ctx.fill();
-        ctx.closePath();
+        if (this.falling) {
+            ctx.beginPath();
+            ctx.fillStyle = "white";
+            ctx.strokeStyle = "black";
+            ctx.arc(
+                x + (width / 3) * !backward - (width / 3) * backward, // @TODO factorize the shift
+                y,
+                (width / 12) * SQUARE_ROOT_2,
+                0, Math.PI * 2, false);
+            // ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+        } else {
+            ctx.beginPath();
+            ctx.fillStyle = "black";
+            ctx.arc(
+                x + (width / 3) * !backward - (width / 3) * backward,
+                y,
+                (width / 32) * SQUARE_ROOT_2,
+                0, Math.PI * 2, false);
+            ctx.fill();
+            ctx.closePath();
+        }
 
         // Cheeks left
         ctx.beginPath();
@@ -269,6 +285,12 @@ class Game {
         this.ctx = canvas.getContext('2d');
         this.score = null;
 
+        this.asteroids = [];
+        this.asteroidCorpses = [];
+        this.currentAsteroidsNum = 0;
+
+        this.waveNum = 0;
+
         this.reinit();
     };
 
@@ -290,7 +312,7 @@ class Game {
         console.debug(this); // @TODO debug print state method
     }
 
-    run() { // @TODO timestamp?
+    run() {
         // @TODO handle control : spaceWasReleased?
         this.step += 1;
 
@@ -337,8 +359,10 @@ class Game {
     collisions() {
         let rabbitRadius = this.mainCharacter.width / 2;
 
-        // with asteroids
         for (let asteroid of this.asteroids) {
+            if (!asteroid.still_alive) {
+                continue;
+            }
             let asteroidRadius = asteroid.diameter / 2;
             let limitDistance = rabbitRadius + asteroidRadius; // + 2;
 
@@ -357,10 +381,12 @@ class Game {
             let squareDistance = squareHorizontal + squareVertical;
 
             if (squareDistance < limitSquareDistance) {
+                asteroid.still_alive = false;
+                asteroid.funeralStep = this.step;
                 return true;
             }
         }
-        // with the floor
+
         return false;
     }
 
@@ -370,11 +396,13 @@ class Game {
 
         // Asteroids waves
         // -- Clean-up
-        if (
-            (this.asteroidCorpses.length > RAINBOW.length) ||
-            (this.step - this.asteroidCorpses[0].funeralStep > 60)
-         ) { 
-            this.asteroidCorpses.shift;
+        if (this.asteroidCorpses.length) {
+            if (
+                (this.asteroidCorpses.length > RAINBOW.length) ||
+                (this.step - this.asteroidCorpses[0].funeralStep > 60)
+            ) {
+                this.asteroidCorpses.shift;
+            }
         }
 
         // -- Creation
@@ -423,14 +451,14 @@ class Game {
 
             // -- Horizontal
             let newPosition = asteroid.position[0] + asteroid.direction[0];
-            if (false) { }
+            if (false) { } // placeholder for fix if needed
             else {
                 asteroid.position[0] = newPosition
             }
 
             // -- Vertical
             newPosition = asteroid.position[1] + asteroid.direction[1];
-            if (false) { }
+            if (false) { } // placeholder for fix if needed
             else {
                 asteroid.position[1] = newPosition
             }
@@ -455,46 +483,53 @@ class Game {
 
 
         // Control
-        // -- U-turn
-        if (CTRL_spacePressed && !this.turning) {
-            if (Date.now() - CTRL_spacePressedTime > TURNING_DELAY) {
-                this.turning = true;
-                this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
-                // this.mainCharacter.boost = 0;
+        if (!this.mainCharacter.falling) {
+            // -- U-turn
+            if (CTRL_spacePressed && !this.turning) {
+                if (Date.now() - CTRL_spacePressedTime > TURNING_DELAY) {
+                    this.turning = true;
+                    this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
+                    // this.mainCharacter.boost = 0;
+                }
+            }
+
+            // -- Boost
+            if (CTRL_spacePressed && !this.boosting) {
+                this.mainCharacter.boost = 16;
+                this.boosting = true;
+            }
+            if (this.mainCharacter.position[1] < 0) {
+                this.mainCharacter.boost = 0;
+            }
+            if (!CTRL_spacePressed) {
+                this.boosting = false;
+                this.turning = false;
             }
         }
 
-        // -- Boost
+        // Movements
         if (this.mainCharacter.direction[1] < SHGRAVITY) {
             this.mainCharacter.direction[1] += 1;
         }
         if (this.mainCharacter.boost > 0) {
             this.mainCharacter.boost -= 1;
         }
-        if (CTRL_spacePressed && !this.boosting) {
-            this.mainCharacter.boost = 16;
-            this.boosting = true;
-        }
-        if (this.mainCharacter.position[1] < 0) {
-            this.mainCharacter.boost = 0;
-        }
-        if (!CTRL_spacePressed) {
-            this.boosting = false;
-            this.turning = false;
-        }
 
-
-        // Movements
         // -- Tail
         if (this.step % tailStepSize == 0) {
-            let tailIndex = this.step / tailStepSize % RAINBOW.length; // to retrieve color
-
-            let position = Object.assign({}, this.mainCharacter.position);
-            this.mainCharacter.fifouTail.push(
-                [position[0], position[1], tailIndex]
-            );
-            if (this.mainCharacter.fifouTail.length > RAINBOW.length) {
+            if (this.mainCharacter.falling) {
                 this.mainCharacter.fifouTail.shift();
+            }
+            else {
+                let tailIndex = this.step / tailStepSize % RAINBOW.length; // to retrieve color
+
+                let position = Object.assign({}, this.mainCharacter.position);
+                this.mainCharacter.fifouTail.push(
+                    [position[0], position[1], tailIndex]
+                );
+                if (this.mainCharacter.fifouTail.length > RAINBOW.length) {
+                    this.mainCharacter.fifouTail.shift();
+                }
             }
         }
 
@@ -535,8 +570,11 @@ class Game {
 
         // Survival
         if (this.collisions()) {
-            console.debug("Death.");
-            this.reinit();
+            console.debug("Immminent death.");
+            this.mainCharacter.falling = true;
+            this.mainCharacter.direction[0] = 0;
+            this.mainCharacter.boost = 20;
+            // this.reinit();
         }
     };
 
@@ -549,7 +587,7 @@ class Game {
             this.drawTheRainbow();
         }
 
-        this.mainCharacter.draw(this.ctx);
+        this.mainCharacter.draw(this.ctx, this.step);
         for (let asteroid of this.asteroids) {
             asteroid.draw(this.ctx, this.step);
         }
