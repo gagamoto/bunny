@@ -288,6 +288,7 @@ class Game {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.score = null;
+        this.best = null;
 
         this.asteroids = [];
         this.asteroidCorpses = [];
@@ -347,6 +348,9 @@ class Game {
 
         if (this.state == GAME_STATE.WAIT) {
             console.debug("Press SPACE to play"); //DEBUG
+            if (this.score > this.best) {
+                this.best = this.score;
+            }
         }
         else if (this.state == GAME_STATE.PLAY) {
             console.debug("We are playing"); //DEBUG
@@ -637,8 +641,8 @@ class Game {
         this.ctx.fillStyle = "white";
         this.ctx.strokeStyle = "black";
         this.ctx.textAlign = "center";
-        this.ctx.font = "70px Helvetica";
-        this.ctx.fillText(this.score, this.canvas.width / 2, this.canvas.height / 4);
+        this.ctx.font = "60px Helvetica";
+        this.ctx.fillText(this.score, this.canvas.width / 2, this.canvas.height / 4 - 10);
         this.ctx.closePath();
 
         if (this.state == GAME_STATE.WAIT) {
@@ -646,6 +650,12 @@ class Game {
 
             this.ctx.font = "20px Helvetica";
             this.ctx.fillText("SCORE", this.canvas.width / 2, this.canvas.height / 4 - size / 2);
+
+            if (this.best !== null) {
+                this.ctx.font = "14px Arial";
+                let message = "BEST: " + this.best;
+                this.ctx.fillText(message, this.canvas.width / 2, this.canvas.height / 4 - size / 2 + 90);
+            }
 
             this.ctx.beginPath();
             this.ctx.fillStyle = null;
