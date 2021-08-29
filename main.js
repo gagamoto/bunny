@@ -28,7 +28,7 @@ class Asteroids {
         this.funeralStep = 0;
 
         this.color = color;
-        let randomGrowth = Math.random() * SIZES.RABBIT * 2 - SIZES.RABBIT;
+        let randomGrowth = (Math.random() - .5) * SIZES.RABBIT * 3;
         this.diameter = Math.max(SIZES.RABBIT + randomGrowth, SIZES.RABBIT / 2);
     };
 
@@ -576,7 +576,7 @@ class Game {
         // Survival
         if (this.collisions()) {
             console.debug("Immminent death.");
-            this.mainCharacter.falling = 120;
+            this.mainCharacter.falling = 90;
             // this.mainCharacter.direction[0] = 0;
             this.mainCharacter.boost = 16;
             this.score = Math.max(0, this.score - 10);
