@@ -106,6 +106,8 @@ class Character {
 
         this.width = SIZES.RABBIT;
         this.height = SIZES.RABBIT;
+
+        this.waitShift = 0;
     };
 
     draw(ctx) {
@@ -114,7 +116,7 @@ class Character {
         let width = this.width;
         let height = this.height;
         let x = this.position[0];
-        let y = this.position[1];
+        let y = this.position[1] + this.waitShift;
 
         // Tail
         ctx.lineWidth = 1;
@@ -293,6 +295,11 @@ class Game {
         // @TODO handle control : spaceWasReleased?
         this.step += 1;
 
+        // Handle charming float on waiting screen
+        if (this.state == GAME_STATE.WAIT) {
+            this.mainCharacter.waitShift = Math.sin(this.step / 8) * 3;
+        }
+
         if (this.state == GAME_STATE.WAIT && this.step > 60) {
             if (CTRL_spacePressed) {
                 this.CTRL_spaceWasPressed = true;
@@ -320,6 +327,7 @@ class Game {
             console.debug("We are playing"); //DEBUG
             this.step = 0;
             this.score = 0;
+            this.mainCharacter.waitShift = 0;
         }
 
         // Reset @TODO
@@ -474,9 +482,7 @@ class Game {
             }
         }
 
-
         let newPosition = null;
-
         // -- Horizontal
         newPosition = this.mainCharacter.position[0] + this.mainCharacter.direction[0];
         if (
