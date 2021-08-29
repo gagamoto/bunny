@@ -1,3 +1,28 @@
+// ZzFX - Zuper Zmall Zound Zynth - Micro Edition
+// MIT License - Copyright 2019 Frank Force
+// https://github.com/KilledByAPixel/ZzFX
+
+// This is a tiny build of zzfx with only a zzfx function to play sounds.
+// You can use zzfxV to set volume.
+// Feel free to minify it further for your own needs!
+
+'use strict';let zzfx,zzfxV,zzfxX
+
+// ZzFXMicro - Zuper Zmall Zound Zynth - v1.1.8 ~ 884 bytes minified
+zzfxV=.3    // volume
+zzfx=       // play sound
+(p=1,k=.05,b=220,e=0,r=0,t=.1,q=0,D=1,u=0,y=0,v=0,z=0,l=0,E=0,A=0,F=0,c=0,w=1,m=0,B=0)=>{let
+M=Math,R=44100,d=2*M.PI,G=u*=500*d/R/R,C=b*=(1-k+2*k*M.random(k=[]))*d/R,g=0,H=0,a=0,n=1,I=0
+,J=0,f=0,x,h;e=R*e+9;m*=R;r*=R;t*=R;c*=R;y*=500*d/R**3;A*=d/R;v*=d/R;z*=R;l=R*l|0;for(h=e+m+
+r+t+c|0;a<h;k[a++]=f)++J%(100*F|0)||(f=q?1<q?2<q?3<q?M.sin((g%d)**3):M.max(M.min(M.tan(g),1)
+,-1):1-(2*g/d%2+2)%2:1-4*M.abs(M.round(g/d)-g/d):M.sin(g),f=(l?1-B+B*M.sin(d*a/l):1)*(0<f?1:
+-1)*M.abs(f)**D*p*zzfxV*(a<e?a/e:a<e+m?1-(a-e)/m*(1-w):a<e+m+r?w:a<h-c?(h-a-c)/t*w:0),f=c?f/
+2+(c>a?0:(a<h-c?1:(h-a)/c)*k[a-c|0]/2):f),x=(b+=u+=y)*M.cos(A*H++),g+=x-x*E*(1-1E9*(M.sin(a)
++1)%2),n&&++n>z&&(b+=v,C+=v,n=0),!l||++I%l||(b=C,u=G,n=n||1);p=zzfxX.createBuffer(1,h,R);p.
+getChannelData(0).set(k);b=zzfxX.createBufferSource();b.buffer=p;b.connect(zzfxX.destination
+);b.start();return b};zzfxX=new (window.AudioContext||webkitAudioContext) // audio context
+
+//#########################################################
 const RAINBOW = [
     "rgba(255,0,0,1)",
     "orange",
@@ -342,6 +367,8 @@ class Game {
     };
 
     switchGameState(state) {
+        zzfx(...[1.01,,76,.1,.06,.06,,1.93,,42,,,.15,,,.1,,.07,.25]); // Random 51
+
         console.debug("Switch game state to:");
         this.state = state;
         console.debug(this.state); //DEBUG
@@ -487,6 +514,7 @@ class Game {
                 (asteroid.position[0] < 0)
             ) {
                 console.debug("Badaboum."); // DEBUG
+                zzfx(...[,,10,.09,.03,0,,2.93,,-1,-989,.1,,,10,,,,.05]); // Random 129
                 this.badaboum(asteroid);
             }
         }
@@ -499,14 +527,19 @@ class Game {
                 if (Date.now() - CTRL_spacePressedTime > TURNING_DELAY) {
                     this.turning = true;
                     this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
+                    // SOUNDS.TURN
+                    zzfx(...[1.52,,201,.03,.03,.01,3,1.45,36,,,,,.1,4.7,,.04,,,.03]); // Blip 210
                     // this.mainCharacter.boost = 0;
                 }
             }
 
             // -- Boost
             if (CTRL_spacePressed && !this.boosting) {
+                // SOUNDS.BOOST
                 this.mainCharacter.boost = 16 - this.mainCharacter.powerMalus;
                 this.boosting = true;
+                let pitch = 80 + 80 * Math.random();
+                zzfx(...[1.27,,pitch,.02,.07,.09,1,1.23,2.1,.8,,,,,,,.01,.97,.01,.18]); // Shoot 67
             }
             if (this.mainCharacter.position[1] < 0) {
                 this.mainCharacter.boost = 0;
@@ -554,6 +587,7 @@ class Game {
             (newPosition + this.mainCharacter.width / 4 < 0)
         ) {
             // -- Auto turn
+            zzfx(...[1.52,,201,.03,.03,.01,3,1.45,36,,,,,.1,4.7,,.04,,,.03]); // Blip 210
             this.turning = true;
             this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
 
@@ -573,6 +607,7 @@ class Game {
         newPosition = this.mainCharacter.position[1] + this.mainCharacter.direction[1] - this.mainCharacter.boost;
         if (newPosition - this.mainCharacter.height > this.canvas.height /*this.mainCharacter.height/2*/) {
             console.debug("Death.");
+            zzfx(...[1.2,,1,.03,.1,.67,4,1.64,,.1,212,-0.01,,.3,,.1,,.52,.03]); // Powerup 134 - Mutation 4
             this.reinit();
             // this.mainCharacter.direction[1] = 0;
             // this.mainCharacter.position[1] = this.canvas.height - this.mainCharacter.height/2;
@@ -584,11 +619,14 @@ class Game {
         // Survival
         if (this.collisions()) {
             console.debug("Immminent death.");
+            zzfx(...[2,,416,,.01,.17,4,.23,,,,,,.5,,.4,.02,.63,.02]); // Hit 183
             this.mainCharacter.powerMalus += 2;
             this.mainCharacter.falling = 30 * this.mainCharacter.powerMalus;
             // this.mainCharacter.direction[0] = 0;
             this.mainCharacter.boost = 16;
             // this.score = Math.max(0, this.score - 20);
+            let sustain = this.mainCharacter.falling/100;
+            zzfx(...[2.29,0,110,.02,sustain,.38,,1.38,,,,,.19,.3,,,.16,.51,.02,.34]); // Music 194
         }
     };
 
@@ -775,3 +813,5 @@ function main() {
 }
 
 main();
+
+// zzfx(...[1.88,0,110,.05,3,.35,1,1.94,,,,,,.4,,,.15,.73,.09,.03]); // Music 230
