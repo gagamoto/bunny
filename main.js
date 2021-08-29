@@ -282,6 +282,7 @@ class Game {
         );
 
         this.asteroids = [];
+        this.asteroidCorpses = [];
         this.currentAsteroidsNum = 0;
 
         this.waveNum = 0;
@@ -368,8 +369,16 @@ class Game {
         const tailStepSize = 4;
 
         // Asteroids waves
+        // -- Clean-up
+        if (this.asteroidCorpses.length > RAINBOW.length) { 
+            this.asteroidCorpses.shift;
+        }
+
         // -- Creation
         if (this.currentAsteroidsNum == 0) {
+            // console.debug("Burrying.");
+            this.asteroidCorpses = this.asteroidCorpses.concat(this.asteroids);
+
             // console.debug("Init wave.");
             this.asteroids = [];
             let waveLength = 3 + Math.floor(Math.random() * (RAINBOW.length - 3)); // @TODO Random number + difficulty per wave
@@ -436,8 +445,8 @@ class Game {
                 asteroid.still_alive = false;
                 asteroid.funeralStep = this.step;
                 this.currentAsteroidsNum -= 1;
-                console.debug(this.currentAsteroidsNum); // DEBUG
-                console.debug(asteroid.position); // DEBUG
+                // console.debug(this.currentAsteroidsNum); // DEBUG
+                // console.debug(asteroid.position); // DEBUG
             }
         }
 
@@ -539,6 +548,9 @@ class Game {
 
         this.mainCharacter.draw(this.ctx);
         for (let asteroid of this.asteroids) {
+            asteroid.draw(this.ctx, this.step);
+        }
+        for (let asteroid of this.asteroidCorpses) {
             asteroid.draw(this.ctx, this.step);
         }
 
