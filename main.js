@@ -241,7 +241,7 @@ class Character {
             // ctx.fill();
             ctx.stroke();
             ctx.closePath();
-        } 
+        }
         if (!this.falling) {
             ctx.beginPath();
             ctx.fillStyle = "black";
@@ -667,20 +667,23 @@ class Game {
         // else if (this.state == GAME_STATE.PLAY) {}
         let fadeSpeed = 200; // in steps
         if (this.state == GAME_STATE.WAIT) {
-            fadeSpeed = 80;
+            fadeSpeed = 60;
         }
 
+        let waver = 0;
         let intensity = 1;
         if (this.step < fadeSpeed) {
             intensity = this.step % fadeSpeed / fadeSpeed; // Fade in blue
         }
+
+        if (this.state == GAME_STATE.PLAY && intensity == 1) { waver = Math.sin(this.step / 64); }
 
         if (this.state == GAME_STATE.WAIT) {
             intensity = 1 - intensity;
         }
 
         this.ctx.beginPath();
-        this.ctx.fillStyle = "rgba(0, 0, " + intensity * 40 + ", 1)";
+        this.ctx.fillStyle = "rgba(0, 0, " + (intensity * 40 + waver * 5) + ", 1)";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.closePath();
 
