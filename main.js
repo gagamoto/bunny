@@ -130,6 +130,9 @@ class Character {
             ctx.beginPath();
             let color = RAINBOW[this.fifouTail[i][2]];
             let size = 10 - i - (RAINBOW.length - this.fifouTail.length); // fix: start with smaller tail
+            if (this.powerMalus > 0) {
+                size = 3;
+            }
             // ctx.fillStyle = "black";
             ctx.strokeStyle = color;
             ctx.arc(
@@ -200,8 +203,7 @@ class Character {
         ctx.closePath();
 
         // Eye left
-        if (this.falling) {
-
+        if (this.falling || this.powerMalus > 0) {
             ctx.beginPath();
             ctx.fillStyle = "white";
             ctx.strokeStyle = "black";
@@ -214,7 +216,7 @@ class Character {
             ctx.stroke();
             ctx.closePath();
         }
-        else {
+        if (!this.falling) {
             ctx.beginPath();
             ctx.fillStyle = "black";
             ctx.arc(
@@ -226,9 +228,8 @@ class Character {
             ctx.closePath();
         }
 
-
         // Eye right
-        if (this.falling) {
+        if (this.falling || this.powerMalus > 0) {
             ctx.beginPath();
             ctx.fillStyle = "white";
             ctx.strokeStyle = "black";
@@ -240,7 +241,8 @@ class Character {
             // ctx.fill();
             ctx.stroke();
             ctx.closePath();
-        } else {
+        } 
+        if (!this.falling) {
             ctx.beginPath();
             ctx.fillStyle = "black";
             ctx.arc(
