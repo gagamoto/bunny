@@ -36,7 +36,8 @@ class Asteroids {
 
         this.still_alive = true;
         this.color = color;
-        this.diameter = SIZES.RABBIT; // @TODO random size
+        let randomGrowth = Math.random() * SIZES.RABBIT * 2 - SIZES.RABBIT;
+        this.diameter = Math.max(SIZES.RABBIT + randomGrowth, SIZES.RABBIT / 2);
     };
 
     draw(ctx) {
@@ -51,6 +52,9 @@ class Asteroids {
             for (let i = 0; i < this.fifouTail.length; i++) {
                 let size = diameter - this.fifouTail.length * delta + i * delta;
                 size -= (RAINBOW.length - this.fifouTail.length); // fix: start with smaller tail
+                if (size <= 0) {
+                    size = 1;
+                }
                 ctx.beginPath();
                 ctx.lineWidth = 1;
                 ctx.strokeStyle = "white"; // this.color;
@@ -61,6 +65,7 @@ class Asteroids {
                     0, Math.PI * 2, false);
                 ctx.stroke();
                 ctx.closePath();
+
             }
 
             ctx.beginPath();
@@ -369,8 +374,8 @@ class Game {
         // Auto
         const tailStepSize = 4;
 
-        // -- Waves
-        // ---- Asteroids
+        // Asteroids waves
+        // -- Creation
         if (this.currentAsteroidsNum == 0) {
             // console.debug("Init wave.");
             this.asteroids = [];
@@ -392,6 +397,7 @@ class Game {
             this.waveNum += 1;
         }
 
+        // -- Movements
         for (let asteroid of this.asteroids) {
             if (!asteroid.still_alive) {
                 continue;
