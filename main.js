@@ -579,10 +579,10 @@ class Game {
         if (this.collisions()) {
             console.debug("Immminent death.");
             this.mainCharacter.powerMalus += 2;
-            this.mainCharacter.falling = 60;
+            this.mainCharacter.falling = 30 * this.mainCharacter.powerMalus;
             // this.mainCharacter.direction[0] = 0;
             this.mainCharacter.boost = 16;
-            this.score = Math.max(0, this.score - 15);
+            this.score = Math.max(0, this.score - 20);
             // this.reinit();
         }
     };
