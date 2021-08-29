@@ -107,6 +107,8 @@ class Character {
         this.turning = false;
         this.falling = 0;
 
+        this.powerMalus = 0;
+
         this.width = SIZES.RABBIT;
         this.height = SIZES.RABBIT;
 
@@ -497,7 +499,7 @@ class Game {
 
             // -- Boost
             if (CTRL_spacePressed && !this.boosting) {
-                this.mainCharacter.boost = 16;
+                this.mainCharacter.boost = 16 - this.mainCharacter.powerMalus;
                 this.boosting = true;
             }
             if (this.mainCharacter.position[1] < 0) {
@@ -532,7 +534,7 @@ class Game {
                 this.mainCharacter.fifouTail.push(
                     [position[0], position[1], tailIndex]
                 );
-                if (this.mainCharacter.fifouTail.length > RAINBOW.length) {
+                if (this.mainCharacter.fifouTail.length > RAINBOW.length - this.mainCharacter.powerMalus) {
                     this.mainCharacter.fifouTail.shift();
                 }
             }
@@ -576,10 +578,11 @@ class Game {
         // Survival
         if (this.collisions()) {
             console.debug("Immminent death.");
-            this.mainCharacter.falling = 90;
+            this.mainCharacter.powerMalus += 2;
+            this.mainCharacter.falling = 60;
             // this.mainCharacter.direction[0] = 0;
             this.mainCharacter.boost = 16;
-            this.score = Math.max(0, this.score - 10);
+            this.score = Math.max(0, this.score - 15);
             // this.reinit();
         }
     };
