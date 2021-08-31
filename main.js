@@ -816,6 +816,7 @@ function main() {
 
     // -- Canvas
     let mainCanvas = document.createElement("canvas");
+
     mainCanvas.height = window.innerHeight;
     mainCanvas.width = Math.min(window.innerHeight, 750); // mainCanvas.width = window.innerWidth;
     document.body.appendChild(mainCanvas);
@@ -824,8 +825,8 @@ function main() {
     document.addEventListener("keydown", keyDownHandler, false);
     document.addEventListener("keyup", keyUpHandler, false);
     document.addEventListener("keydown", keyDownHandler, false);
-    mainCanvas.addEventListener("touchstart", touchDownHandler, false);
-    mainCanvas.addEventListener("touchend", touchUpDownHandler, false);
+    document.addEventListener("touchstart", touchDownHandler, false);
+    document.addEventListener("touchend", touchUpDownHandler, false);
     // mainCanvas.addEventListener("touchcancel", dummyHandler, false);
     // mainCanvas.addEventListener("touchmove", dummyHandler, false);
 
