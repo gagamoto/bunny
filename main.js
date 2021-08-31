@@ -133,22 +133,19 @@ class Asteroids {
 }
 
 class Character {
-    constructor(position, angle = 0) {
+    constructor(position, direction) {
         this.position = position;
         this.direction = [-CRUISE_SPEED, 0];
-        this.angle = angle;
-        this.boost = 0;
 
-        this.fifouTail = []; // drawing only
+        this.boost = 0;
         this.boosting = false;
         this.turning = false;
         this.falling = 0;
-
         this.powerMalus = 0;
 
-        this.width = SIZES.RABBIT;
-        this.height = SIZES.RABBIT;
-
+        this.width = SIZES.RABBIT; // @TODO remove
+        this.height = SIZES.RABBIT; // @TODO remove
+        this.fifouTail = []; // drawing only
         this.waitShift = 0;
     };
 
@@ -322,9 +319,14 @@ const GAME_STATE = {
     PLAY: 1
 }
 
-class Engine {
+class Params {
     constructor(factor = 1) {
-
+        // @TODO: Math.round() the values?
+        console.debug(factor);
+        this.FACTOR = Math.round(factor);
+        this.SHGRAVITY = 6 * factor;
+        this.BOOST = 16 * factor;
+        console.debug(this);
     }
 }
 
@@ -332,6 +334,9 @@ class Game {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
+
+        let factor = canvas.height / REFERENCE_HEIGHT;
+        this.params = new Params(factor);
 
         this.score = null;
         this.best = null;
@@ -497,7 +502,7 @@ class Game {
                 let x = Math.floor(Math.random() * (this.canvas.width / 2) + (this.canvas.width / 4));
                 let y = 0 - i * VERTICAL_DELAY; // @TODO add randomness to delay + difficulty per wave
                 let asteroid = new Asteroids([x, y], color);
-                let horizontalDirection = Math.floor(Math.random() * SHGRAVITY);
+                let horizontalDirection = Math.floor(Math.random() * this.params.SHGRAVITY);
                 if (x > this.canvas.width / 2) {
                     horizontalDirection = - horizontalDirection;
                 }
@@ -523,7 +528,7 @@ class Game {
                     asteroid.fifouTail.shift();
                 }
             }
-            if (asteroid.direction[1] < SHGRAVITY * 1.1) {
+            if (asteroid.direction[1] < this.params.SHGRAVITY * 1.1) {
                 asteroid.direction[1] += 1;
             }
 
@@ -563,14 +568,13 @@ class Game {
                     this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
                     // SOUNDS.TURN
                     zzfx(...[1.52, , 201, .03, .03, .01, 3, 1.45, 36, , , , , .1, 4.7, , .04, , , .03]); // Blip 210
-                    // this.mainCharacter.boost = 0;
                 }
             }
 
             // -- Boost
             if (CTRL_spacePressed && !this.boosting) {
                 // SOUNDS.BOOST
-                this.mainCharacter.boost = 16 - this.mainCharacter.powerMalus;
+                this.mainCharacter.boost = this.params.BOOST - this.mainCharacter.powerMalus;
                 this.boosting = true;
                 let pitch = 80 + 80 * Math.random();
                 zzfx(...[1.27, , pitch, .02, .07, .09, 1, 1.23, 2.1, .8, , , , , , , .01, .97, .01, .18]); // Shoot 67
@@ -585,14 +589,15 @@ class Game {
         }
 
         // Movements
-        if (this.mainCharacter.direction[1] < SHGRAVITY) {
-            this.mainCharacter.direction[1] += 1;
+        if (this.mainCharacter.direction[1] < this.params.SHGRAVITY) {
+            this.mainCharacter.direction[1] += this.params.FACTOR;
         }
         if (this.mainCharacter.boost > 0) {
-            this.mainCharacter.boost -= 1;
+            this.mainCharacter.boost -= Math.min(this.params.FACTOR, this.mainCharacter.boost);
+            
         }
         if (this.mainCharacter.falling > 0) {
-            this.mainCharacter.falling -= 1;
+            this.mainCharacter.falling -= this.params.FACTOR;
         }
         if (!this.mainCharacter.falling && this.mainCharacter.powerMalus > 0) {
             this.mainCharacter.powerMalus -= .01;
