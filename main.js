@@ -23,15 +23,15 @@ zzfx =       // play sound
                                     getChannelData(0).set(k); b = zzfxX.createBufferSource(); b.buffer = p; b.connect(zzfxX.destination
                                     ); b.start(); return b
     }; zzfxX = new (window.AudioContext || webkitAudioContext) // audio context
+// End
 
-//#########################################################
 const RAINBOW = [
     "rgba(255,0,0,1)",
-    "orange",
+    "rgba(255,125,0,1)", // "orange",
     "rgba(255,255,0,1)",
     "green",
     "blue",
-    "indigo"
+    "rgba(75, 0, 130,1)" // "indigo"
 ]
 const SQUARE_ROOT_2 = 1.41421356237;
 const DEGREES = Math.PI / 180;
@@ -328,19 +328,13 @@ class Game {
     };
 
     generateStars() {
-        this.stars = [];
-
         const numStars = 20;
-        const starSizeMinusOne = 1;
+        this.stars = [];
 
         for (let i = 0; i < numStars; i++) {
             this.stars.push(
                 [Math.random(), Math.random()]
             );
-        }
-
-        for (let star of this.stars) {
-            console.debug(star);
         }
     }
 
@@ -848,14 +842,16 @@ function touchUpDownHandler(e) {
 // }
 
 function main() {
-    // Initialization
-    // console.debug("Hello, World!"); //DEBUG
-
     // -- Canvas
     let mainCanvas = document.createElement("canvas");
 
-    mainCanvas.height = window.innerHeight;
-    mainCanvas.width = Math.min(window.innerHeight, 750); // mainCanvas.width = window.innerWidth;
+    let referenceHeight = window.innerHeight;
+    let referenceWidth = window.innerWidth;
+    console.debug(referenceHeight); //DEBUG
+    console.debug(referenceWidth); //DEBUG
+
+    mainCanvas.height = referenceHeight;
+    mainCanvas.width = referenceHeight * 9 / 16;
     document.body.appendChild(mainCanvas);
 
     // -- Control
