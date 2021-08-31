@@ -562,7 +562,9 @@ class Game {
         if (this.mainCharacter.falling > 0) {
             this.mainCharacter.falling -= 1;
         }
-
+        if (!this.mainCharacter.falling && this.mainCharacter.powerMalus > 0) {
+            this.mainCharacter.powerMalus -= .01;
+        }
         // -- Tail
         if (this.step % tailStepSize == 0) {
             if (this.mainCharacter.falling) {
