@@ -88,13 +88,15 @@ class Asteroids {
                     size = 1;
                 }
                 ctx.beginPath();
+                ctx.fillStyle = RAINBOW[i];
                 ctx.strokeStyle = "white"; // this.color;
                 ctx.arc(
                     this.fifouTail[i][0],
                     this.fifouTail[i][1],
                     (size / 2) * SQUARE_ROOT_2,
                     0, Math.PI * 2, false);
-                ctx.stroke();
+                ctx.fill();
+                // ctx.stroke();
                 ctx.closePath();
 
             }
@@ -870,7 +872,7 @@ function main() {
     console.debug(referenceWidth); //DEBUG
 
     mainCanvas.height = referenceHeight;
-    mainCanvas.width = referenceHeight * 9 / 16;
+    mainCanvas.width = referenceHeight * 10 / 16;
     document.body.appendChild(mainCanvas);
 
     // -- Control
