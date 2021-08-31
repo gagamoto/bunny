@@ -786,7 +786,9 @@ function keyDownHandler(e) {
     }
 }
 
-function touchDownHandler() {
+function touchDownHandler(e) {
+    e.preventDefault();
+
     if (!CTRL_spacePressed) {
         CTRL_spacePressed = true;
         CTRL_spacePressedTime = Date.now();
@@ -802,7 +804,9 @@ function keyUpHandler(e) {
     }
 }
 
-function touchUpDownHandler() {
+function touchUpDownHandler(e) {
+    e.preventDefault();
+
     CTRL_spacePressed = false;
 }
 
