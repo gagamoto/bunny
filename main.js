@@ -660,14 +660,15 @@ class Game {
         this.ctx.fillStyle = "white";
         this.ctx.strokeStyle = "black";
         this.ctx.textAlign = "center";
-        this.ctx.font = "20px Arial";
-        this.ctx.fillText("TAP SPACE", this.canvas.width / 4, this.canvas.height / 3 + 30);
-        this.ctx.fillText("TO GO UP", this.canvas.width / 4, this.canvas.height / 3 + 60);
-        this.ctx.fillText("PRESS SPACE", 3 * this.canvas.width / 4, this.canvas.height / 3 + 30);
-        this.ctx.fillText("TO GO BACK", 3 * this.canvas.width / 4, this.canvas.height / 3 + 60);
-        this.ctx.font = "26px Arial";
+        // this.ctx.font = "20px Arial";
+        // this.ctx.fillText("TAP SPACE", this.canvas.width / 4, this.canvas.height / 3 + 30);
+        // this.ctx.fillText("TO GO UP", this.canvas.width / 4, this.canvas.height / 3 + 60);
+        // this.ctx.fillText("PRESS SPACE", 3 * this.canvas.width / 4, this.canvas.height / 3 + 30);
+        // this.ctx.fillText("TO GO BACK", 3 * this.canvas.width / 4, this.canvas.height / 3 + 60);
+        this.ctx.font = "bolder 26px Arial";
 
-        this.ctx.fillText("AVOID THE ASTEROIDS", this.canvas.width / 2, 3 * this.canvas.height / 4 + 30);
+        this.ctx.fillText("TAP SPACE &", this.canvas.width / 2, 3 * this.canvas.height / 4);
+        this.ctx.fillText("DO NOT FALL", this.canvas.width / 2, 3 * this.canvas.height / 4 + 30);
         this.ctx.closePath();
     }
 
