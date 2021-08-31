@@ -3,6 +3,7 @@
     margin: 0; 
     color: black;
     background-color: DarkGrey;
+    touch-action: manipulation;
 }
 canvas {
     position: absolute;
