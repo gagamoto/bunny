@@ -25,43 +25,56 @@ zzfx =       // play sound
     }; zzfxX = new (window.AudioContext || webkitAudioContext) // audio context
 // End
 
+// Graphics
 const RAINBOW = [
-    "rgba(255,0,0,1)",
-    "rgba(255,125,0,1)", // "orange",
-    "rgba(255,255,0,1)",
-    "green",
-    "blue",
-    "rgba(75, 0, 130,1)" // "indigo"
+    "rgba(255,   0,   0, 1)", // "red"?
+    "rgba(255, 125,   0, 1)", // "orange"?
+    "rgba(255, 255,   0, 1)", // "yellow"?
+    "rgba(  0, 255,   0, 1)", // "green"?
+    "rgba(  0,   0, 255, 1)", // "blue"?
+    "rgba( 75,   0, 130, 1)" // == "indigo"!
 ]
+
+// Maths
 const SQUARE_ROOT_2 = 1.41421356237;
 const DEGREES = Math.PI / 180;
-const SHGRAVITY = 6;
-const CRUISE_SPEED = 3;
-const TURNING_DELAY = 350;
+
+// Engine
+// @TODO normalize the values
+// @TODO move to a class Engine, member of Game
+const REFERENCE_HEIGHT = 627; // innerHeight for dev
+const FACTOR = window.innerHeight / REFERENCE_HEIGHT;
+
+const SHGRAVITY = 6*FACTOR;
+const CRUISE_SPEED = 3*FACTOR;
 const VERTICAL_DELAY = 200;
 const SIZES = {
-    RABBIT: 32,
-    ASTEROID: 30
+    RABBIT: 30*FACTOR,
+    ASTEROID_MIN: 10*FACTOR,
+    ASTEROID_MAX: 50*FACTOR
 }
 
+const TURNING_DELAY = 350; // unit = steps (1 step = 1/60 second)
+
 class Asteroids {
-    constructor(position, color = "green", angle = 0) {
+    constructor(position, color = "white") {
         this.position = position;
         this.direction = [0, 0];
-        this.angle = angle;
-        this.fifouTail = [];
+        this.diameter = SIZES.ASTEROID_MIN + Math.round(Math.random() * (SIZES.ASTEROID_MAX - SIZES.ASTEROID_MIN));
 
         this.still_alive = true;
         this.funeralStep = 0;
 
+        // graphics
         this.color = color;
-        let randomGrowth = (Math.random() - .5) * SIZES.RABBIT * 3;
-        this.diameter = Math.max(SIZES.RABBIT + randomGrowth, SIZES.RABBIT / 2);
+        this.fifouTail = [];
     };
 
     draw(ctx, currentStep = 0) {
-        let diameter = this.diameter;
+        ctx.lineWidth = 2;
 
+        // for readability
+        let diameter = this.diameter;
         let x = this.position[0];
         let y = this.position[1];
 
@@ -75,7 +88,6 @@ class Asteroids {
                     size = 1;
                 }
                 ctx.beginPath();
-                ctx.lineWidth = 1;
                 ctx.strokeStyle = "white"; // this.color;
                 ctx.arc(
                     this.fifouTail[i][0],
@@ -88,7 +100,6 @@ class Asteroids {
             }
 
             ctx.beginPath();
-            ctx.lineWidth = 1;
             ctx.fillStyle = "black"; // this.color;
             ctx.strokeStyle = "white"; // this.color;
             ctx.arc(
@@ -107,7 +118,6 @@ class Asteroids {
                 return;
             }
             ctx.beginPath();
-            ctx.lineWidth = 2;
             // ctx.fillStyle = "pink"; // this.color;
             ctx.strokeStyle = this.color;
             ctx.arc(
@@ -143,6 +153,8 @@ class Character {
     };
 
     draw(ctx, currentStep = 0) {
+        ctx.lineWidth = 2;
+
         // Reference square
         let backward = (this.direction[0] < 0);
         let width = this.width;
@@ -151,7 +163,7 @@ class Character {
         let y = this.position[1] + this.waitShift;
 
         // Tail
-        ctx.lineWidth = 1;
+        // ctx.lineWidth = 1;
         // @TODO width == boost
         for (let i = 0; i < this.fifouTail.length; i++) {
             ctx.beginPath();
@@ -310,33 +322,28 @@ const GAME_STATE = {
     PLAY: 1
 }
 
+class Engine {
+    constructor(factor = 1) {
+
+    }
+}
+
 class Game {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
+
         this.score = null;
         this.best = null;
 
+        this.waveNum = 0;
+        this.currentAsteroidsNum = 0;
         this.asteroids = [];
         this.asteroidCorpses = [];
-        this.currentAsteroidsNum = 0;
-
-        this.waveNum = 0;
 
         this.stars = null;
         this.reinit();
     };
-
-    generateStars() {
-        const numStars = 20;
-        this.stars = [];
-
-        for (let i = 0; i < numStars; i++) {
-            this.stars.push(
-                [Math.random(), Math.random()]
-            );
-        }
-    }
 
     reinit() {
         this.generateStars();
@@ -356,6 +363,17 @@ class Game {
         this.waveNum = 0;
 
         console.debug(this); // @TODO debug print state method
+    }
+
+    generateStars() {
+        const numStars = 20;
+        this.stars = [];
+
+        for (let i = 0; i < numStars; i++) {
+            this.stars.push(
+                [Math.random(), Math.random()]
+            );
+        }
     }
 
     run() {
@@ -837,10 +855,6 @@ function touchUpDownHandler(e) {
     CTRL_spacePressed = false;
 }
 
-// function dummyHandler() {
-//     console.debug("dumming");
-// }
-
 function main() {
     // -- Canvas
     let mainCanvas = document.createElement("canvas");
@@ -857,11 +871,8 @@ function main() {
     // -- Control
     document.addEventListener("keydown", keyDownHandler, false);
     document.addEventListener("keyup", keyUpHandler, false);
-    document.addEventListener("keydown", keyDownHandler, false);
     document.addEventListener("touchstart", touchDownHandler, false);
     document.addEventListener("touchend", touchUpDownHandler, false);
-    // mainCanvas.addEventListener("touchcancel", dummyHandler, false);
-    // mainCanvas.addEventListener("touchmove", dummyHandler, false);
 
     // Run
     console.debug("Let's run!"); //DEBUG
