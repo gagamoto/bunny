@@ -329,7 +329,7 @@ class Params {
         console.debug(factor);
         this.FACTOR = Math.round(factor);
         this.SHGRAVITY = 6 * factor;
-        this.BOOST = 16 * factor;
+        this.BOOST = 16 * factor; // @TODO do not factor BOOST, factor only the downward vertical steps
         this.CRUISE_SPEED = 3 * factor;
         this.VERTICAL_DELAY = 200 * factor;
         console.debug(this);
@@ -651,7 +651,7 @@ class Game {
             zzfx(...[2, , 416, , .01, .17, 4, .23, , , , , , .5, , .4, .02, .63, .02]); // Falling (Hit 183)
             this.mainCharacter.powerMalus += 2;
             this.mainCharacter.falling = (SHMECOND / 2) * this.mainCharacter.powerMalus;
-            this.mainCharacter.boost = this.params.BOOST; // jumping effect on collision
+            this.mainCharacter.boost = this.params.BOOST; // safe jumping effect on collision
 
             let sustain = this.mainCharacter.falling / 100;
             zzfx(...[2.29, 0, 110, .02, sustain, .38, , 1.38, , , , , .19, .3, , , .16, .51, .02, .34]); // Music 194
@@ -668,6 +668,7 @@ class Game {
         }
 
         this.mainCharacter.draw(this.ctx, this.step);
+
         for (let asteroid of this.asteroids) {
             asteroid.draw(this.ctx, this.params.FACTOR, this.step);
         }
@@ -680,23 +681,16 @@ class Game {
         if (this.state == GAME_STATE.WAIT) {
             this.drawInstructions();
         }
-        // requestAnimationFrame(() => this.draw());
     }
 
     drawInstructions() {
         this.ctx.beginPath();
         this.ctx.fillStyle = "white";
-        this.ctx.strokeStyle = "black";
         this.ctx.textAlign = "center";
-        // this.ctx.font = "20px Arial";
-        // this.ctx.fillText("TAP SPACE", this.canvas.width / 4, this.canvas.height / 3 + 30);
-        // this.ctx.fillText("TO GO UP", this.canvas.width / 4, this.canvas.height / 3 + 60);
-        // this.ctx.fillText("PRESS SPACE", 3 * this.canvas.width / 4, this.canvas.height / 3 + 30);
-        // this.ctx.fillText("TO GO BACK", 3 * this.canvas.width / 4, this.canvas.height / 3 + 60);
-        this.ctx.font = "bolder 26px Arial";
-
+        let fontSize = 26 * this.params.FACTOR;
+        this.ctx.font = "bolder " + String(fontSize) + "px Arial";
         this.ctx.fillText("TAP SPACE &", this.canvas.width / 2, 3 * this.canvas.height / 4);
-        this.ctx.fillText("DO NOT FALL", this.canvas.width / 2, 3 * this.canvas.height / 4 + 30);
+        this.ctx.fillText("DO NOT FALL", this.canvas.width / 2, 3 * this.canvas.height / 4 + fontSize * 1.3);
         this.ctx.closePath();
     }
 
@@ -708,6 +702,7 @@ class Game {
         this.ctx.fillStyle = "white";
         this.ctx.strokeStyle = "black";
         this.ctx.textAlign = "center";
+        let fontSize = 60 * this.params.FACTOR;
         this.ctx.font = "60px Helvetica";
         this.ctx.fillText(this.score, this.canvas.width / 2, this.canvas.height / 4 - 10);
         this.ctx.closePath();
@@ -725,7 +720,6 @@ class Game {
             }
 
             this.ctx.beginPath();
-            this.ctx.fillStyle = null;
             this.ctx.strokeStyle = "white";
             this.ctx.rect(
                 this.canvas.width / 2 - size / 2,
@@ -733,7 +727,6 @@ class Game {
                 size,
                 size
             );
-            // ctx.fill();
             this.ctx.stroke();
             this.ctx.closePath();
         }
@@ -865,3 +858,5 @@ function main() {
 main();
 
 // @TODO handle control : spaceWasReleased?
+// @TODO factorize drawSquare(...)
+// @TODO factorize drawArc(...)
