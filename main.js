@@ -26,6 +26,7 @@ zzfx =       // play sound
 // End
 
 // Graphics
+const SHMECOND = 60; // around 1 seconds
 const PAUSE_TIME = 60; // around 1 seconds
 const FADE_SPEED = 90; // around 1.5 seconds
 const REFERENCE_HEIGHT = 627; // innerHeight for dev
@@ -46,6 +47,7 @@ const DEGREES = Math.PI / 180;
 // Engine
 // @TODO normalize the values
 // @TODO move to a class Engine, member of Game
+const TURNING_DELAY = 350; // unit = steps (1 step = 1/60 second)
 const FACTOR = window.innerHeight / REFERENCE_HEIGHT; // @TODO remove
 const GAME_STATE = {
     WAIT: 0,
@@ -56,8 +58,6 @@ const SIZES = {
     ASTEROID_MIN: 10 * FACTOR,
     ASTEROID_MAX: 50 * FACTOR
 }
-
-const TURNING_DELAY = 350; // unit = steps (1 step = 1/60 second)
 
 class Asteroids {
     constructor(position, color = "white") {
@@ -393,6 +393,7 @@ class Game {
         this.step += 1;
 
         this.handle_charming_float();
+
         if (this.state == GAME_STATE.WAIT && this.step > PAUSE_TIME) {
             if (CTRL_spacePressed) {
                 this.CTRL_spaceWasPressed = true;
@@ -460,6 +461,7 @@ class Game {
 
     badaboum(asteroid) {
         if (asteroid.position[1] > 0) {
+            zzfx(...[, , 10, .09, .03, 0, , 2.93, , -1, -989, .1, , , 10, , , , .05]); // Badaboum (Random 129)
             this.score += 1; // only on-screen crashes are scored, earlier crashes are discarded
         }
         asteroid.still_alive = false;
@@ -468,7 +470,6 @@ class Game {
     }
 
     engine() {
-        // Auto
         const tailStepSize = 4;
 
         // Asteroids waves
@@ -476,13 +477,13 @@ class Game {
         if (this.asteroidCorpses.length) {
             if (
                 (this.asteroidCorpses.length > RAINBOW.length) ||
-                (this.step - this.asteroidCorpses[0].funeralStep > 60)
+                (this.step - this.asteroidCorpses[0].funeralStep > SHMECOND)
             ) {
-                this.asteroidCorpses.shift;
+                this.asteroidCorpses.shift; // cleaning one corpse per frame seems enough
             }
         }
 
-        // -- Creation
+        // -- Creation @TODO clean
         if (this.currentAsteroidsNum == 0) {
             // console.debug("Burrying.");
             this.asteroidCorpses = this.asteroidCorpses.concat(this.asteroids);
@@ -523,9 +524,6 @@ class Game {
                     asteroid.fifouTail.shift();
                 }
             }
-            if (asteroid.direction[1] < this.params.SHGRAVITY * 1.1) {
-                asteroid.direction[1] += 1;
-            }
 
             // -- Horizontal
             let newPosition = asteroid.position[0] + asteroid.direction[0];
@@ -535,6 +533,10 @@ class Game {
             }
 
             // -- Vertical
+            if (asteroid.direction[1] < this.params.SHGRAVITY * 1.1) {
+                asteroid.direction[1] += this.params.FACTOR;
+            }
+
             newPosition = asteroid.position[1] + asteroid.direction[1];
             if (false) { } // placeholder for fix if needed
             else {
@@ -547,12 +549,10 @@ class Game {
                 (asteroid.position[0] > this.canvas.width) ||
                 (asteroid.position[0] < 0)
             ) {
-                console.debug("Badaboum."); // DEBUG
-                zzfx(...[, , 10, .09, .03, 0, , 2.93, , -1, -989, .1, , , 10, , , , .05]); // Random 129
+                // console.debug("Badaboum.");
                 this.badaboum(asteroid);
             }
         }
-
 
         // Control
         if (!this.mainCharacter.falling) {
@@ -561,8 +561,7 @@ class Game {
                 if (Date.now() - CTRL_spacePressedTime > TURNING_DELAY) {
                     this.turning = true;
                     this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
-                    // SOUNDS.TURN
-                    zzfx(...[1.52, , 201, .03, .03, .01, 3, 1.45, 36, , , , , .1, 4.7, , .04, , , .03]); // Blip 210
+                    zzfx(...[1.52, , 201, .03, .03, .01, 3, 1.45, 36, , , , , .1, 4.7, , .04, , , .03]); // Turn (Blip 210)
                 }
             }
 
@@ -589,7 +588,6 @@ class Game {
         }
         if (this.mainCharacter.boost > 0) {
             this.mainCharacter.boost -= Math.min(this.params.FACTOR, this.mainCharacter.boost);
-
         }
         if (this.mainCharacter.falling > 0) {
             this.mainCharacter.falling -= this.params.FACTOR;
@@ -623,17 +621,14 @@ class Game {
             (newPosition + this.mainCharacter.width / 4 < 0)
         ) {
             // -- Auto turn
-            zzfx(...[1.52, , 201, .03, .03, .01, 3, 1.45, 36, , , , , .1, 4.7, , .04, , , .03]); // Blip 210
-            this.turning = true;
+            // @TODO factorize turn()
+            zzfx(...[1.52, , 201, .03, .03, .01, 3, 1.45, 36, , , , , .1, 4.7, , .04, , , .03]); // Turn (Blip 210)
+            this.mainCharacter.turning = true;
             this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
 
-            // -- Passthrough
-            // if (this.mainCharacter.direction[0] > 0) {
-            //     this.mainCharacter.position[0] = 0;
-            // }
-            // else {
-            //     this.mainCharacter.position[0] = this.canvas.width;
-            // }
+            // -- Passthrough: removed because not as fun as expected
+            // if (this.mainCharacter.direction[0] > 0) { this.mainCharacter.position[0] = 0; }
+            // else { this.mainCharacter.position[0] = this.canvas.width; }
         }
         else {
             this.mainCharacter.position[0] = newPosition
@@ -642,11 +637,9 @@ class Game {
         // -- Vertical
         newPosition = this.mainCharacter.position[1] + this.mainCharacter.direction[1] - this.mainCharacter.boost;
         if (newPosition - this.mainCharacter.height > this.canvas.height /*this.mainCharacter.height/2*/) {
-            console.debug("Death.");
-            zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Powerup 134 - Mutation 4
+            // console.debug("Death.");
+            zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Death (Powerup 134 - Mutation 4)
             this.initialize();
-            // this.mainCharacter.direction[1] = 0;
-            // this.mainCharacter.position[1] = this.canvas.height - this.mainCharacter.height/2;
         }
         else {
             this.mainCharacter.position[1] = newPosition
@@ -654,13 +647,12 @@ class Game {
 
         // Survival
         if (this.collisions()) {
-            console.debug("Immminent death.");
-            zzfx(...[2, , 416, , .01, .17, 4, .23, , , , , , .5, , .4, .02, .63, .02]); // Hit 183
+            // console.debug("Immminent death.");
+            zzfx(...[2, , 416, , .01, .17, 4, .23, , , , , , .5, , .4, .02, .63, .02]); // Falling (Hit 183)
             this.mainCharacter.powerMalus += 2;
-            this.mainCharacter.falling = 30 * this.mainCharacter.powerMalus;
-            // this.mainCharacter.direction[0] = 0;
-            this.mainCharacter.boost = 16;
-            // this.score = Math.max(0, this.score - 20);
+            this.mainCharacter.falling = (SHMECOND / 2) * this.mainCharacter.powerMalus;
+            this.mainCharacter.boost = this.params.BOOST; // jumping effect on collision
+
             let sustain = this.mainCharacter.falling / 100;
             zzfx(...[2.29, 0, 110, .02, sustain, .38, , 1.38, , , , , .19, .3, , , .16, .51, .02, .34]); // Music 194
         }
