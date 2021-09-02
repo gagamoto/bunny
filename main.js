@@ -45,13 +45,10 @@ const DEGREES = Math.PI / 180;
 const REFERENCE_HEIGHT = 627; // innerHeight for dev
 const FACTOR = window.innerHeight / REFERENCE_HEIGHT;
 
-const SHGRAVITY = 6*FACTOR;
-const CRUISE_SPEED = 3*FACTOR;
-const VERTICAL_DELAY = 200;
 const SIZES = {
-    RABBIT: 30*FACTOR,
-    ASTEROID_MIN: 10*FACTOR,
-    ASTEROID_MAX: 50*FACTOR
+    RABBIT: 30 * FACTOR,
+    ASTEROID_MIN: 10 * FACTOR,
+    ASTEROID_MAX: 50 * FACTOR
 }
 
 const TURNING_DELAY = 350; // unit = steps (1 step = 1/60 second)
@@ -70,37 +67,42 @@ class Asteroids {
         this.fifouTail = [];
     };
 
-    draw(ctx, currentStep = 0) {
+    draw(ctx, factor = 1, currentStep = 0) {
+
         ctx.lineWidth = 2;
 
         // for readability
+        const tailDelta = Math.round(4 * factor); // @TODO fix tail angle
+        const boumDelta = Math.round(4 * factor);
+
         let diameter = this.diameter;
         let x = this.position[0];
         let y = this.position[1];
 
         // Tail
         if (this.still_alive) {
-            let delta = 4;
             for (let i = 0; i < this.fifouTail.length; i++) {
-                let size = diameter - this.fifouTail.length * delta + i * delta;
-                size -= (RAINBOW.length - this.fifouTail.length); // fix: start with smaller tail
-                if (size <= 0) {
-                    size = 1;
-                }
+                let size = tailDelta; // @TODO fix
+                // let size = diameter + (i - this.fifouTail.length) * tailDelta;
+                // size -= (RAINBOW.length - this.fifouTail.length); // fix: start with smaller tail
+                // if (size <= 0) {
+                //     size = 2 * factor;
+                // }
                 ctx.beginPath();
-                ctx.fillStyle = RAINBOW[i];
-                ctx.strokeStyle = "white"; // this.color;
+                // ctx.fillStyle = RAINBOW[i];
+                ctx.strokeStyle = RAINBOW[i];
                 ctx.arc(
                     this.fifouTail[i][0],
                     this.fifouTail[i][1],
                     (size / 2) * SQUARE_ROOT_2,
                     0, Math.PI * 2, false);
-                ctx.fill();
-                // ctx.stroke();
+                // ctx.fill();
+                ctx.stroke();
                 ctx.closePath();
 
             }
 
+            // Core
             ctx.beginPath();
             ctx.fillStyle = "black"; // this.color;
             ctx.strokeStyle = "white"; // this.color;
@@ -114,20 +116,19 @@ class Asteroids {
             ctx.closePath();
         }
         else {
-            let delta = 4;
-            diameter = 10 + (currentStep - this.funeralStep) * delta;
+            diameter = (10 * factor); // + (currentStep - this.funeralStep) * boumDelta; @TODO fix
             if (diameter > 150) {
                 return;
             }
             ctx.beginPath();
-            // ctx.fillStyle = "pink"; // this.color;
+            ctx.fillStyle = this.color;
             ctx.strokeStyle = this.color;
             ctx.arc(
                 x,
                 y,
                 (diameter / 2) * SQUARE_ROOT_2,
                 0, Math.PI * 2, false);
-            // ctx.fill();
+            ctx.fill();
             ctx.stroke();
             ctx.closePath();
         }
@@ -135,9 +136,9 @@ class Asteroids {
 }
 
 class Character {
-    constructor(position, direction) {
+    constructor(position, speed) {
         this.position = position;
-        this.direction = [-CRUISE_SPEED, 0];
+        this.direction = [-speed, 0];
 
         this.boost = 0;
         this.boosting = false;
@@ -328,12 +329,14 @@ class Params {
         this.FACTOR = Math.round(factor);
         this.SHGRAVITY = 6 * factor;
         this.BOOST = 16 * factor;
+        this.CRUISE_SPEED = 3 * factor;
+        this.VERTICAL_DELAY = 200 * factor;
         console.debug(this);
     }
 }
 
 class Game {
-    constructor(canvas) {
+    constructor(canvas) { // @TODO declare everything in constructor, THEN initialize
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
 
@@ -343,24 +346,27 @@ class Game {
         this.score = null;
         this.best = null;
 
-        this.waveNum = 0;
-        this.currentAsteroidsNum = 0;
-        this.asteroids = [];
-        this.asteroidCorpses = [];
-
+        this.mainCharacter = null;
+        this.waveNum = null;
+        this.currentAsteroidsNum = null;
+        this.asteroids = null
+        this.asteroidCorpses = null;
         this.stars = null;
-        this.reinit();
+
+        this.state = null;
+        this.step = null;
+        this.CTRL_spaceWasPressed = null;
     };
 
-    reinit() {
+    initialize() {
         this.generateStars();
-
         this.switchGameState(GAME_STATE.WAIT);
-        this.step = null;
+        this.step = 0;
         this.CTRL_spaceWasPressed = false;
 
         this.mainCharacter = new Character(
-            [this.canvas.width / 2, this.canvas.height / 2]
+            [this.canvas.width / 2, this.canvas.height / 2],
+            this.params.CRUISE_SPEED
         );
 
         this.asteroids = [];
@@ -368,8 +374,6 @@ class Game {
         this.currentAsteroidsNum = 0;
 
         this.waveNum = 0;
-
-        console.debug(this); // @TODO debug print state method
     }
 
     generateStars() {
@@ -494,15 +498,15 @@ class Game {
             // console.debug("Burrying.");
             this.asteroidCorpses = this.asteroidCorpses.concat(this.asteroids);
 
-            // console.debug("Init wave.");
+            // console.debug("Initialize wave.");
             this.asteroids = [];
             const minNumAsteroids = 5;
-            let waveLength = minNumAsteroids + Math.floor(Math.random() * (RAINBOW.length - minNumAsteroids)); // @TODO Random number + difficulty per wave
+            let waveLength = minNumAsteroids + Math.floor(Math.random() * (RAINBOW.length - minNumAsteroids)); // fix
 
             for (let i = 0; i < waveLength; i++) {
                 let color = RAINBOW[this.waveNum % RAINBOW.length];
                 let x = Math.floor(Math.random() * (this.canvas.width / 2) + (this.canvas.width / 4));
-                let y = 0 - i * VERTICAL_DELAY; // @TODO add randomness to delay + difficulty per wave
+                let y = 0 - i * this.params.VERTICAL_DELAY; // @TODO add randomness to delay
                 let asteroid = new Asteroids([x, y], color);
                 let horizontalDirection = Math.floor(Math.random() * this.params.SHGRAVITY);
                 if (x > this.canvas.width / 2) {
@@ -596,7 +600,7 @@ class Game {
         }
         if (this.mainCharacter.boost > 0) {
             this.mainCharacter.boost -= Math.min(this.params.FACTOR, this.mainCharacter.boost);
-            
+
         }
         if (this.mainCharacter.falling > 0) {
             this.mainCharacter.falling -= this.params.FACTOR;
@@ -651,7 +655,7 @@ class Game {
         if (newPosition - this.mainCharacter.height > this.canvas.height /*this.mainCharacter.height/2*/) {
             console.debug("Death.");
             zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Powerup 134 - Mutation 4
-            this.reinit();
+            this.initialize();
             // this.mainCharacter.direction[1] = 0;
             // this.mainCharacter.position[1] = this.canvas.height - this.mainCharacter.height/2;
         }
@@ -684,7 +688,7 @@ class Game {
 
         this.mainCharacter.draw(this.ctx, this.step);
         for (let asteroid of this.asteroids) {
-            asteroid.draw(this.ctx, this.step);
+            asteroid.draw(this.ctx, this.params.FACTOR, this.step);
         }
         for (let asteroid of this.asteroidCorpses) {
             asteroid.draw(this.ctx, this.step);
@@ -824,42 +828,34 @@ class Game {
 }
 
 // Control
+
 var CTRL_spacePressed = false;
 var CTRL_spacePressedTime = null;
 
-function keyDownHandler(e) {
-    if (e.key == " ") {
-        if (!CTRL_spacePressed) {
-            CTRL_spacePressed = true;
-            CTRL_spacePressedTime = Date.now();
-        }
-        // console.debug("Spacebar is pressed"); //DEBUG
-        // console.debug(CTRL_spacePressedTime); //DEBUG
-    }
-}
-
-function touchDownHandler(e) {
-    e.preventDefault();
-
+function press() {
     if (!CTRL_spacePressed) {
         CTRL_spacePressed = true;
         CTRL_spacePressedTime = Date.now();
     }
-    // console.debug("Spacebar is pressed"); //DEBUG
-    // console.debug(CTRL_spacePressedTime); //DEBUG
 }
 
+function release() { CTRL_spacePressed = false; }
+
+function keyDownHandler(e) {
+    if (e.key == " ") { press(); }
+}
 function keyUpHandler(e) {
-    if (e.key == " ") {
-        CTRL_spacePressed = false;
-        // console.debug("Spacebar is not pressed"); //DEBUG
-    }
+    if (e.key == " ") { release(); }
+}
+
+function touchDownHandler(e) {
+    e.preventDefault();
+    press();
 }
 
 function touchUpDownHandler(e) {
     e.preventDefault();
-
-    CTRL_spacePressed = false;
+    release();
 }
 
 function main() {
@@ -867,9 +863,9 @@ function main() {
     let mainCanvas = document.createElement("canvas");
 
     let referenceHeight = window.innerHeight;
-    let referenceWidth = window.innerWidth;
-    console.debug(referenceHeight); //DEBUG
-    console.debug(referenceWidth); //DEBUG
+    // let referenceWidth = window.innerWidth;
+    // console.debug(referenceHeight);
+    // console.debug(referenceWidth);
 
     mainCanvas.height = referenceHeight;
     mainCanvas.width = referenceHeight * 10 / 16;
@@ -882,13 +878,9 @@ function main() {
     document.addEventListener("touchend", touchUpDownHandler, false);
 
     // Run
-    console.debug("Let's run!"); //DEBUG
     let mainGame = new Game(mainCanvas);
+    mainGame.initialize();
     mainGame.run();
-    // let interval = setInterval(() => mainGame.run(), 100);
-    // mainGame.draw()
 }
 
 main();
-
-// zzfx(...[1.88,0,110,.05,3,.35,1,1.94,,,,,,.4,,,.15,.73,.09,.03]); // Music 230
