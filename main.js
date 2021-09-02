@@ -26,6 +26,10 @@ zzfx =       // play sound
 // End
 
 // Graphics
+const PAUSE_TIME = 60; // around 1 seconds
+const FADE_SPEED = 90; // around 1.5 seconds
+const REFERENCE_HEIGHT = 627; // innerHeight for dev
+const NUM_STARS = 20; // enough
 const RAINBOW = [
     "rgba(255,   0,   0, 1)", // "red"?
     "rgba(255, 125,   0, 1)", // "orange"?
@@ -42,9 +46,11 @@ const DEGREES = Math.PI / 180;
 // Engine
 // @TODO normalize the values
 // @TODO move to a class Engine, member of Game
-const REFERENCE_HEIGHT = 627; // innerHeight for dev
-const FACTOR = window.innerHeight / REFERENCE_HEIGHT;
-
+const FACTOR = window.innerHeight / REFERENCE_HEIGHT; // @TODO remove
+const GAME_STATE = {
+    WAIT: 0,
+    PLAY: 1
+}
 const SIZES = {
     RABBIT: 30 * FACTOR,
     ASTEROID_MIN: 10 * FACTOR,
@@ -317,11 +323,6 @@ class Character {
     }
 };
 
-const GAME_STATE = {
-    WAIT: 0,
-    PLAY: 1
-}
-
 class Params {
     constructor(factor = 1) {
         // @TODO: Math.round() the values?
@@ -359,10 +360,8 @@ class Game {
     };
 
     initialize() {
-        this.generateStars();
         this.switchGameState(GAME_STATE.WAIT);
-        this.step = 0;
-        this.CTRL_spaceWasPressed = false;
+        this.generateStars();
 
         this.mainCharacter = new Character(
             [this.canvas.width / 2, this.canvas.height / 2],
@@ -372,31 +371,29 @@ class Game {
         this.asteroids = [];
         this.asteroidCorpses = [];
         this.currentAsteroidsNum = 0;
-
         this.waveNum = 0;
     }
 
     generateStars() {
-        const numStars = 20;
         this.stars = [];
-
-        for (let i = 0; i < numStars; i++) {
+        for (let i = 0; i < NUM_STARS; i++) {
             this.stars.push(
                 [Math.random(), Math.random()]
             );
         }
     }
 
-    run() {
-        // @TODO handle control : spaceWasReleased?
-        this.step += 1;
-
-        // Handle charming float on waiting screen
+    handle_charming_float() {
         if (this.state == GAME_STATE.WAIT) {
             this.mainCharacter.waitShift = Math.sin(this.step / 8) * 3;
         }
+    }
 
-        if (this.state == GAME_STATE.WAIT && this.step > 60) {
+    run() {
+        this.step += 1;
+
+        this.handle_charming_float();
+        if (this.state == GAME_STATE.WAIT && this.step > PAUSE_TIME) {
             if (CTRL_spacePressed) {
                 this.CTRL_spaceWasPressed = true;
             }
@@ -412,27 +409,19 @@ class Game {
     };
 
     switchGameState(state) {
-        zzfx(...[1.01, , 76, .1, .06, .06, , 1.93, , 42, , , .15, , , .1, , .07, .25]); // Random 51
+        zzfx(...[1.01, , 76, .1, .06, .06, , 1.93, , 42, , , .15, , , .1, , .07, .25]); // Main screen (Random 51)
 
-        console.debug("Switch game state to:");
+        // console.debug("Switch game state to:");
         this.state = state;
-        console.debug(this.state); //DEBUG
-
+        this.step = 0; // reset in both states
         if (this.state == GAME_STATE.WAIT) {
-            console.debug("Press SPACE to play"); //DEBUG
-            if (this.score > this.best) {
-                this.best = this.score;
-            }
+            if (this.score > this.best) { this.best = this.score; }
         }
         else if (this.state == GAME_STATE.PLAY) {
-            console.debug("We are playing"); //DEBUG
-            this.step = 0;
             this.score = 0;
             this.mainCharacter.waitShift = 0;
         }
-
-        // Reset @TODO
-        this.CTRL_spaceWasPressed = false;
+        this.CTRL_spaceWasPressed = false; // fix: do not start while boosting
     }
 
     // Engine
@@ -759,11 +748,9 @@ class Game {
     }
 
     drawBackground() {
-        // if (this.state == GAME_STATE.WAIT) {}
-        // else if (this.state == GAME_STATE.PLAY) {}
-        let fadeSpeed = 200; // in steps
+        let fadeSpeed = FADE_SPEED;
         if (this.state == GAME_STATE.WAIT) {
-            fadeSpeed = 60;
+            fadeSpeed = PAUSE_TIME;
         }
 
         let waver = 0;
@@ -884,3 +871,5 @@ function main() {
 }
 
 main();
+
+// @TODO handle control : spaceWasReleased?
