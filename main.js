@@ -34,7 +34,7 @@ const REFERENCE_WIDTH = 391; // innerWidth for dev
 
 const SHMECOND = 60; // around 1 seconds
 const PAUSE_TIME = 60; // around 1 seconds
-const FADE_SPEED = 90; // around 1.5 seconds
+const FADE_SPEED = 60; // around 1.5 seconds
 const NUM_STARS = 20; // enough
 const RAINBOW = [
     "rgba(255,   0,   0, 1)", // "red"?
@@ -604,25 +604,20 @@ class Game {
     }
 
     drawBackground() {
-        let fadeSpeed = FADE_SPEED;
-        if (this.state == GAME_STATE.WAIT) {
-            fadeSpeed = PAUSE_TIME;
-        }
-
         let intensity = 1;
         let waver = 0;
 
-        // @TODO fade
-        // @TODO wave
-        // if (this.step < fadeSpeed) {
-        //     intensity = this.step % fadeSpeed / fadeSpeed; // Fade in blue
-        // }
+        if (this.step < FADE_SPEED) {
+            intensity = this.step % FADE_SPEED / FADE_SPEED; // Fade in blue
+        }
 
-        // if (this.state == GAME_STATE.PLAY && intensity == 1) { waver = Math.sin(this.step / 64); }
+        if (this.state == GAME_STATE.WAIT) {
+            intensity = 1 - intensity;
+        }
 
-        // if (this.state == GAME_STATE.WAIT) {
-        //     intensity = 1 - intensity;
-        // }
+        if (this.state == GAME_STATE.PLAY && intensity == 1) {
+            waver = Math.sin((this.step - FADE_SPEED)/ 64);
+        }
 
         this.ctx.beginPath();
         this.ctx.fillStyle = "rgba(0, 0, " + String(intensity * 40 + waver * 5) + ", 1)";
@@ -631,7 +626,7 @@ class Game {
 
         // Stars
         const color = "rgba(255, 255, 255, " + String(intensity) + ")";
-        if (this.state == GAME_STATE.PLAY /*|| true*/) {
+        if (this.state == GAME_STATE.PLAY) {
             for (let star of this.stars) {
                 drawCenteredRound(
                     this.ctx,
