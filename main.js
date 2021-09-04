@@ -278,7 +278,7 @@ class Character {
 };
 
 class Game {
-    constructor(canvas) { // @TODO declare everything in constructor, THEN initialize
+    constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         let factor = canvas.height / REFERENCE_HEIGHT;
@@ -387,7 +387,7 @@ class Game {
             }
 
             // close enough (danger zone)
-            // @TODO color the danger zone
+            // @TODO color the danger zone?
             let limitSquareDistance = (rabbitRadius + asteroidRadius) * (rabbitRadius + asteroidRadius);
             let squareHorizontal = horizontalDistance * horizontalDistance;
             let squareVertical = verticalDistance * verticalDistance;
@@ -427,8 +427,9 @@ class Game {
             for (let i = 0; i < waveLength; i++) {
                 let color = RAINBOW[this.waveNum % RAINBOW.length];
                 // @TODO remove debug positions
-                let x = i * SIZES.ASTEROID_MAX; // Math.floor(Math.random() * (REFERENCE_WIDTH / 2) + (REFERENCE_WIDTH / 4));
-                let y = REFERENCE_HEIGHT / 8; // 0 - i * this.params.VERTICAL_DELAY; // @TODO add randomness to delay
+                // x debug for debug = i * SIZES.ASTEROID_MAX
+                let x = Math.floor(Math.random() * (REFERENCE_WIDTH / 2) + (REFERENCE_WIDTH / 4));
+                let y = -SIZES.ASTEROID_MAX - i * VERTICAL_DELAY; // @TODO add randomness to delay
                 let asteroid = new Asteroids([x, y], color);
 
                 let horizontalDirection = Math.floor(Math.random() * CRUISE_SPEED * 2);
@@ -506,7 +507,7 @@ class Game {
             if (this.mainCharacter.recovering) {
                 this.mainCharacter.boost -= this.mainCharacter.powerMalus;
             }
-            const pitch = 80; // @TODO Math.random(); ?
+            const pitch = 80; // @TODO randomize the pitch?
             zzfx(...[1.27, , pitch, .02, .07, .09, 1, 1.23, 2.1, .8, , , , , , , .01, .97, .01, .18]); // Shoot 67
         }
 
@@ -709,8 +710,8 @@ class Game {
     }
 
     drawScore() {
-        this.score = 623; // @TODO debug value to remove
-        this.best = 1623; // @TODO debug value to remove
+        // this.score = 623; // debug value to remove
+        // this.best = 1623; // debug value to remove
         if (this.score === null) {
             return;
         }
@@ -722,24 +723,22 @@ class Game {
         this.ctx.fillText(this.score, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4);
 
         // @TODO draw best score well centered
-        // if (this.state == GAME_STATE.WAIT) {
-        //     const size = fontSize * 2;
+        if (this.state == GAME_STATE.WAIT) {
+            //     this.ctx.font = "20px Helvetica";
+            //     this.ctx.fillText("SCORE", REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4);
 
-        //     this.ctx.font = "20px Helvetica";
-        //     this.ctx.fillText("SCORE", REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 - size / 2 + 6);
+            if (this.best !== null) {
+                this.ctx.font = String(fontSize / 3) + "px Arial";
+                let message = "BEST: " + this.best;
+                this.ctx.fillText(message, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 + fontSize * .6);
+            }
 
-        //     if (this.best !== null) {
-        //         this.ctx.font = "14px Arial";
-        //         let message = "BEST: " + this.best;
-        //         this.ctx.fillText(message, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 );
-        //     }
-
-        //     drawCenteredRect(
-        //         this.ctx, REFERENCE_WIDTH / 2,
-        //         REFERENCE_HEIGHT / 4 - fontSize / 2,
-        //         size, size, null, "white"
-        //     );
-        // }
+            drawCenteredRect(
+                this.ctx, REFERENCE_WIDTH / 2,
+                REFERENCE_HEIGHT / 4,
+                fontSize * 2, fontSize * 2, null, "white"
+            );
+        }
     }
 
     drawInstructions() {
@@ -806,4 +805,4 @@ function main() {
 main();
 
 
-// @TODO vertical delays are random
+// @TODO fix ear size
