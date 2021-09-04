@@ -687,54 +687,9 @@ class Game {
 
         this.drawScore();
 
-        // if (this.state == GAME_STATE.WAIT) {
-        //     this.drawInstructions();
-        // }
-    }
-
-    drawInstructions() {
-        this.ctx.beginPath();
-        this.ctx.fillStyle = "white";
-        this.ctx.textAlign = "center";
-        let fontSize = 26 * this.params.FACTOR;
-        this.ctx.font = "bolder " + String(fontSize) + "px Arial";
-        this.ctx.fillText("TAP SPACE &", REFERENCE_WIDTH / 2, 3 * REFERENCE_HEIGHT / 4);
-        this.ctx.fillText("DO NOT FALL", REFERENCE_WIDTH / 2, 3 * REFERENCE_HEIGHT / 4 + fontSize * 1.3);
-        this.ctx.closePath();
-    }
-
-    drawScore() {
-        this.score = 623; // @TODO debug value to remove
-        this.best = 1623; // @TODO debug value to remove
-        if (this.score === null) {
-            return;
+        if (this.state == GAME_STATE.WAIT) {
+            this.drawInstructions();
         }
-
-        const fontSize = 60;
-        this.ctx.font = String(fontSize) + "px Helvetica";
-        this.ctx.fillStyle = "white";
-        this.ctx.textAlign = "center";
-        this.ctx.fillText(this.score, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4);
-
-        // @TODO draw best score well centered
-        // if (this.state == GAME_STATE.WAIT) {
-        //     const size = fontSize * 2;
-
-        //     this.ctx.font = "20px Helvetica";
-        //     this.ctx.fillText("SCORE", REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 - size / 2 + 6);
-
-        //     if (this.best !== null) {
-        //         this.ctx.font = "14px Arial";
-        //         let message = "BEST: " + this.best;
-        //         this.ctx.fillText(message, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 );
-        //     }
-
-        //     drawCenteredRect(
-        //         this.ctx, REFERENCE_WIDTH / 2,
-        //         REFERENCE_HEIGHT / 4 - fontSize / 2,
-        //         size, size, null, "white"
-        //     );
-        // }
     }
 
     drawBackground() {
@@ -776,6 +731,49 @@ class Game {
                 );
             }
         }
+    }
+
+    drawScore() {
+        this.score = 623; // @TODO debug value to remove
+        this.best = 1623; // @TODO debug value to remove
+        if (this.score === null) {
+            return;
+        }
+
+        const fontSize = 60;
+        this.ctx.font = String(fontSize) + "px Helvetica";
+        this.ctx.fillStyle = "white";
+        this.ctx.textAlign = "center";
+        this.ctx.fillText(this.score, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4);
+
+        // @TODO draw best score well centered
+        // if (this.state == GAME_STATE.WAIT) {
+        //     const size = fontSize * 2;
+
+        //     this.ctx.font = "20px Helvetica";
+        //     this.ctx.fillText("SCORE", REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 - size / 2 + 6);
+
+        //     if (this.best !== null) {
+        //         this.ctx.font = "14px Arial";
+        //         let message = "BEST: " + this.best;
+        //         this.ctx.fillText(message, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 );
+        //     }
+
+        //     drawCenteredRect(
+        //         this.ctx, REFERENCE_WIDTH / 2,
+        //         REFERENCE_HEIGHT / 4 - fontSize / 2,
+        //         size, size, null, "white"
+        //     );
+        // }
+    }
+
+    drawInstructions() {
+        this.ctx.fillStyle = "white";
+        this.ctx.textAlign = "center";
+        let fontSize = 30;
+        this.ctx.font = "bolder " + String(fontSize) + "px Arial";
+        this.ctx.fillText("TAP SPACE", REFERENCE_WIDTH / 2, 3 * REFERENCE_HEIGHT / 4);
+        this.ctx.fillText("DO NOT FALL", REFERENCE_WIDTH / 2, 3 * REFERENCE_HEIGHT / 4 + fontSize * 1.3);
     }
 
     drawTheRainbow() {
