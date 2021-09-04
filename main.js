@@ -115,8 +115,8 @@ class Asteroids {
         let x = this.position[0];
         let y = this.position[1];
 
-        // Tail
         if (this.still_alive) {
+            // Tail
             for (let i = 0; i < this.fifouTail.length; i++) {
                 let size = tailDelta; // @TODO fix
                 // let size = diameter + (i - this.fifouTail.length) * tailDelta;
@@ -139,17 +139,7 @@ class Asteroids {
             }
 
             // Core
-            ctx.beginPath();
-            ctx.fillStyle = "black"; // this.color;
-            ctx.strokeStyle = "white"; // this.color;
-            ctx.arc(
-                x,
-                y,
-                (diameter / 2) * SQUARE_ROOT_2,
-                0, Math.PI * 2, false);
-            ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
+            drawCenteredRound(ctx, x, y, diameter/2, "black", "white")
         }
         else {
             diameter = (10 * factor); // + (currentStep - this.funeralStep) * boumDelta; @TODO fix
@@ -481,6 +471,47 @@ class Game {
         this.currentAsteroidsNum -= 1;
     }
 
+    manageAsteroidWaves() {
+        // -- Clean-up
+        if (this.asteroidCorpses.length) {
+            if (
+                (this.asteroidCorpses.length > RAINBOW.length) ||
+                (this.step - this.asteroidCorpses[0].funeralStep > SHMECOND)
+            ) {
+                this.asteroidCorpses.shift; // cleaning one corpse per frame seems enough
+            }
+        }
+
+        // -- Creation
+        if (this.currentAsteroidsNum == 0) {
+            // Burry the old wave
+            this.asteroidCorpses = this.asteroidCorpses.concat(this.asteroids);
+
+            // Initialize the new wave
+            this.asteroids = [];
+            const minNumAsteroids = 4;
+            const maxNumAsteroids = RAINBOW.length;
+            let waveLength = minNumAsteroids + Math.round(Math.random() * (maxNumAsteroids - minNumAsteroids));
+
+            for (let i = 0; i < waveLength; i++) {
+                let color = RAINBOW[this.waveNum % RAINBOW.length];
+                let x = i*SIZES.ASTEROID_MAX; // Math.floor(Math.random() * (REFERENCE_WIDTH / 2) + (REFERENCE_WIDTH / 4));
+                let y = i*SIZES.ASTEROID_MAX; // 0 - i * this.params.VERTICAL_DELAY; // @TODO add randomness to delay
+                let asteroid = new Asteroids([x, y], color);
+
+                let horizontalDirection = Math.floor(Math.random() * CRUISE_SPEED*2);
+                if (x > REFERENCE_WIDTH / 2) {
+                    horizontalDirection = - horizontalDirection;
+                }
+                asteroid.direction[0] = horizontalDirection;
+                this.asteroids.push(asteroid);
+            }
+
+            this.currentAsteroidsNum = this.asteroids.length;
+            this.waveNum += 1;
+        }
+    }
+
     controlMainCharacter() {
         if (this.mainCharacter.falling) { return; }
 
@@ -559,94 +590,61 @@ class Game {
 
         if (newY - yMargin > REFERENCE_HEIGHT) {
             // console.debug("Death.");
-            zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Death (Powerup 134 - Mutation 4)
-            this.initialize();
+            // zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Death (Powerup 134 - Mutation 4)
+            // this.initialize();
         }
     }
 
     engine() {
-        /*        // Asteroids waves
-                // -- Clean-up
-                if (this.asteroidCorpses.length) {
-                    if (
-                        (this.asteroidCorpses.length > RAINBOW.length) ||
-                        (this.step - this.asteroidCorpses[0].funeralStep > SHMECOND)
-                    ) {
-                        this.asteroidCorpses.shift; // cleaning one corpse per frame seems enough
-                    }
-                }
-        
-                // -- Creation @TODO clean
-                if (this.currentAsteroidsNum == 0) {
-                    // console.debug("Burrying.");
-                    this.asteroidCorpses = this.asteroidCorpses.concat(this.asteroids);
-        
-                    // console.debug("Initialize wave.");
-                    this.asteroids = [];
-                    const minNumAsteroids = 5;
-                    let waveLength = minNumAsteroids + Math.floor(Math.random() * (RAINBOW.length - minNumAsteroids)); // fix
-        
-                    for (let i = 0; i < waveLength; i++) {
-                        let color = RAINBOW[this.waveNum % RAINBOW.length];
-                        let x = Math.floor(Math.random() * (REFERENCE_WIDTH / 2) + (REFERENCE_WIDTH / 4));
-                        let y = 0 - i * this.params.VERTICAL_DELAY; // @TODO add randomness to delay
-                        let asteroid = new Asteroids([x, y], color);
-                        let horizontalDirection = Math.floor(Math.random() * this.params.SHGRAVITY);
-                        if (x > REFERENCE_WIDTH / 2) {
-                            horizontalDirection = - horizontalDirection;
+        this.manageAsteroidWaves();
+
+        /*        
+                
+                        // -- Movements
+                        for (let asteroid of this.asteroids) {
+                            if (!asteroid.still_alive) {
+                                continue;
+                            }
+                            // -- Tail
+                            if (this.step % (tailStepSize) == 0) {
+                                let position = Object.assign({}, asteroid.position);
+                                asteroid.fifouTail.push(
+                                    [position[0], position[1], null]
+                                );
+                                if (asteroid.fifouTail.length > RAINBOW.length) {
+                                    asteroid.fifouTail.shift();
+                                }
+                            }
+                
+                            // -- Horizontal
+                            let newPosition = asteroid.position[0] + asteroid.direction[0];
+                            if (false) { } // placeholder for fix if needed
+                            else {
+                                asteroid.position[0] = newPosition
+                            }
+                
+                            // -- Vertical
+                            if (asteroid.direction[1] < this.params.SHGRAVITY * 1.1) {
+                                asteroid.direction[1] += this.params.FACTOR;
+                            }
+                
+                            newPosition = asteroid.position[1] + asteroid.direction[1];
+                            if (false) { } // placeholder for fix if needed
+                            else {
+                                asteroid.position[1] = newPosition
+                            }
+                
+                            // -- Badaboum
+                            if (
+                                (asteroid.position[1] > REFERENCE_HEIGHT) ||
+                                (asteroid.position[0] > REFERENCE_WIDTH) ||
+                                (asteroid.position[0] < 0)
+                            ) {
+                                // console.debug("Badaboum.");
+                                this.badaboum(asteroid);
+                            }
                         }
-                        asteroid.direction[0] = horizontalDirection; // @TODO random + random position also
-                        this.asteroids.push(asteroid);
-                    }
-                    this.currentAsteroidsNum = this.asteroids.length;
-                    this.waveNum += 1;
-                }
-        
-                // -- Movements
-                for (let asteroid of this.asteroids) {
-                    if (!asteroid.still_alive) {
-                        continue;
-                    }
-                    // -- Tail
-                    if (this.step % (tailStepSize) == 0) {
-                        let position = Object.assign({}, asteroid.position);
-                        asteroid.fifouTail.push(
-                            [position[0], position[1], null]
-                        );
-                        if (asteroid.fifouTail.length > RAINBOW.length) {
-                            asteroid.fifouTail.shift();
-                        }
-                    }
-        
-                    // -- Horizontal
-                    let newPosition = asteroid.position[0] + asteroid.direction[0];
-                    if (false) { } // placeholder for fix if needed
-                    else {
-                        asteroid.position[0] = newPosition
-                    }
-        
-                    // -- Vertical
-                    if (asteroid.direction[1] < this.params.SHGRAVITY * 1.1) {
-                        asteroid.direction[1] += this.params.FACTOR;
-                    }
-        
-                    newPosition = asteroid.position[1] + asteroid.direction[1];
-                    if (false) { } // placeholder for fix if needed
-                    else {
-                        asteroid.position[1] = newPosition
-                    }
-        
-                    // -- Badaboum
-                    if (
-                        (asteroid.position[1] > REFERENCE_HEIGHT) ||
-                        (asteroid.position[0] > REFERENCE_WIDTH) ||
-                        (asteroid.position[0] < 0)
-                    ) {
-                        // console.debug("Badaboum.");
-                        this.badaboum(asteroid);
-                    }
-                }
-        */
+                */
         // Control
         this.controlMainCharacter();
 
@@ -688,9 +686,9 @@ class Game {
             this.drawTheRainbow();
         }
         this.mainCharacter.draw(this.ctx, this.step);
-        // for (let asteroid of this.asteroids) {
-        //     asteroid.draw(this.ctx, this.params.FACTOR, this.step);
-        // }
+        for (let asteroid of this.asteroids) {
+            asteroid.draw(this.ctx, this.params.FACTOR, this.step);
+        }
         // for (let asteroid of this.asteroidCorpses) {
         //     asteroid.draw(this.ctx, this.step);
         // }
