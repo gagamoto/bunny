@@ -44,6 +44,7 @@ const RAINBOW = [
     "rgba(  0,   0, 255, 1)", // "blue"?
     "rgba( 75,   0, 130, 1)" // == "indigo"!
 ]
+const TAILSTEPSIZE = 4;
 
 // Maths
 const SQUARE_ROOT_2 = 1.41421356237;
@@ -62,8 +63,8 @@ const GAME_STATE = {
 };
 const SIZES = {
     RABBIT: 30,
-    ASTEROID_MIN: 10,
-    ASTEROID_MAX: 50
+    ASTEROID_MIN: 30,
+    ASTEROID_MAX: 80
 };
 
 function drawCenteredRect(ctx = null, x = 0, y = 0, w = 0, h = 0, fillStyle = "white", strokeStyle = null, strokeWidth = 2) {
@@ -105,11 +106,8 @@ class Asteroids {
     };
 
     draw(ctx, currentStep = 0) {
-
-        ctx.lineWidth = 2;
-
         // for readability
-        const tailDelta = 4; // @TODO fix tail angle
+        const tailDelta = 4;
 
         let diameter = this.diameter;
         let x = this.position[0];
@@ -118,24 +116,13 @@ class Asteroids {
         if (this.still_alive) {
             // Tail
             for (let i = 0; i < this.fifouTail.length; i++) {
-                let size = tailDelta; // @TODO fix
-                // let size = diameter + (i - this.fifouTail.length) * tailDelta;
-                // size -= (RAINBOW.length - this.fifouTail.length); // fix: start with smaller tail
-                // if (size <= 0) {
-                //     size = 2 * factor;
-                // }
-                ctx.beginPath();
-                // ctx.fillStyle = RAINBOW[i];
-                ctx.strokeStyle = RAINBOW[i];
-                ctx.arc(
-                    this.fifouTail[i][0],
-                    this.fifouTail[i][1],
-                    (size / 2) * SQUARE_ROOT_2,
-                    0, Math.PI * 2, false);
-                // ctx.fill();
-                ctx.stroke();
-                ctx.closePath();
-
+                let color = this.color.replace("1)", String((i + 1) / this.fifouTail.length) + ")");
+                let radius = (this.diameter / 2) - (this.fifouTail.length - i) * tailDelta;
+                if (radius < 4) {
+                    continue;
+                    // radius = 4;
+                }
+                drawCenteredRound(ctx, this.fifouTail[i][0], this.fifouTail[i][1], radius, color, null);
             }
 
             // Core
@@ -144,7 +131,7 @@ class Asteroids {
         else {
             const boumDelta = 6;
             let deltaStep = currentStep - this.funeralStep;
-            const radius = 10 + deltaStep * boumDelta; //@TODO fix
+            const radius = boumDelta + deltaStep * boumDelta;
             if (radius > SIZES.ASTEROID_MAX * 2) {
                 return;
             }
@@ -435,22 +422,24 @@ class Game {
         }
     }
 
+    tailAsteroid(asteroid) {
+        let position = Object.assign({}, asteroid.position);
+        asteroid.fifouTail.push(
+            [position[0], position[1], null]
+        );
+        if (asteroid.fifouTail.length > RAINBOW.length) {
+            asteroid.fifouTail.shift();
+        }
+    }
+
     moveAsteroids() {
         for (let asteroid of this.asteroids) {
             if (!asteroid.still_alive) {
                 continue;
             }
 
-            // // -- Tail
-            // if (this.step % (tailStepSize) == 0) {
-            //     let position = Object.assign({}, asteroid.position);
-            //     asteroid.fifouTail.push(
-            //         [position[0], position[1], null]
-            //     );
-            //     if (asteroid.fifouTail.length > RAINBOW.length) {
-            //         asteroid.fifouTail.shift();
-            //     }
-            // }
+            // -- Tail
+            if (this.step % (TAILSTEPSIZE) == 0) { this.tailAsteroid(asteroid); }
 
             if (asteroid.direction[1] < SHGRAVITY * 1.1) {
                 asteroid.direction[1] += VERTICAL_SHTEP; // asteroids will go 1.1 faster than us
@@ -512,14 +501,13 @@ class Game {
     }
 
     tailMainCharacter() {
-        const tailStepSize = 4;
-        if (this.step % tailStepSize != 0) { return; }
+        if (this.step % TAILSTEPSIZE != 0) { return; }
 
         if (this.mainCharacter.falling) {
             this.mainCharacter.fifouTail.shift();
         }
         else {
-            let tailIndex = this.step / tailStepSize % RAINBOW.length; // color index
+            let tailIndex = this.step / TAILSTEPSIZE % RAINBOW.length; // color index
 
             let position = Object.assign({}, this.mainCharacter.position); // hard copy
             this.mainCharacter.fifouTail.push(
