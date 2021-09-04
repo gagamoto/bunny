@@ -139,7 +139,7 @@ class Asteroids {
             }
 
             // Core
-            drawCenteredRound(ctx, x, y, diameter/2, "black", "white")
+            drawCenteredRound(ctx, x, y, diameter / 2, "black", "white")
         }
         else {
             diameter = (10 * factor); // + (currentStep - this.funeralStep) * boumDelta; @TODO fix
@@ -461,16 +461,6 @@ class Game {
         return false;
     }
 
-    badaboum(asteroid) {
-        if (asteroid.position[1] > 0) {
-            zzfx(...[, , 10, .09, .03, 0, , 2.93, , -1, -989, .1, , , 10, , , , .05]); // Badaboum (Random 129)
-            this.score += 1; // only on-screen crashes are scored, earlier crashes are discarded
-        }
-        asteroid.still_alive = false;
-        asteroid.funeralStep = this.step;
-        this.currentAsteroidsNum -= 1;
-    }
-
     manageAsteroidWaves() {
         // -- Clean-up
         if (this.asteroidCorpses.length) {
@@ -495,11 +485,12 @@ class Game {
 
             for (let i = 0; i < waveLength; i++) {
                 let color = RAINBOW[this.waveNum % RAINBOW.length];
-                let x = i*SIZES.ASTEROID_MAX; // Math.floor(Math.random() * (REFERENCE_WIDTH / 2) + (REFERENCE_WIDTH / 4));
-                let y = i*SIZES.ASTEROID_MAX; // 0 - i * this.params.VERTICAL_DELAY; // @TODO add randomness to delay
+                // @TODO remove debug positions
+                let x = i * SIZES.ASTEROID_MAX; // Math.floor(Math.random() * (REFERENCE_WIDTH / 2) + (REFERENCE_WIDTH / 4));
+                let y = i * SIZES.ASTEROID_MAX; // 0 - i * this.params.VERTICAL_DELAY; // @TODO add randomness to delay
                 let asteroid = new Asteroids([x, y], color);
 
-                let horizontalDirection = Math.floor(Math.random() * CRUISE_SPEED*2);
+                let horizontalDirection = Math.floor(Math.random() * CRUISE_SPEED * 2);
                 if (x > REFERENCE_WIDTH / 2) {
                     horizontalDirection = - horizontalDirection;
                 }
@@ -510,6 +501,50 @@ class Game {
             this.currentAsteroidsNum = this.asteroids.length;
             this.waveNum += 1;
         }
+    }
+
+    moveAsteroids() {
+        for (let asteroid of this.asteroids) {
+            if (!asteroid.still_alive) {
+                continue;
+            }
+
+            // // -- Tail
+            // if (this.step % (tailStepSize) == 0) {
+            //     let position = Object.assign({}, asteroid.position);
+            //     asteroid.fifouTail.push(
+            //         [position[0], position[1], null]
+            //     );
+            //     if (asteroid.fifouTail.length > RAINBOW.length) {
+            //         asteroid.fifouTail.shift();
+            //     }
+            // }
+
+            if (asteroid.direction[1] < SHGRAVITY * 1.1) {
+                asteroid.direction[1] += VERTICAL_SHTEP; // asteroids will go 1.1 faster than us
+            }
+            asteroid.position[0] = asteroid.position[0] + asteroid.direction[0];
+            asteroid.position[1] = asteroid.position[1] + asteroid.direction[1];
+
+            // -- Badaboum
+            if (
+                (asteroid.position[1] > REFERENCE_HEIGHT) ||
+                (asteroid.position[0] > REFERENCE_WIDTH) ||
+                (asteroid.position[0] < 0)
+            ) {
+                this.badaboum(asteroid);
+            }
+        }
+    }
+
+    badaboum(asteroid) {
+        if (asteroid.position[1] > 0) {
+            zzfx(...[, , 10, .09, .03, 0, , 2.93, , -1, -989, .1, , , 10, , , , .05]); // Badaboum (Random 129)
+            this.score += 1; // only on-screen crashes are scored, earlier crashes are discarded
+        }
+        asteroid.still_alive = false;
+        asteroid.funeralStep = this.step;
+        this.currentAsteroidsNum -= 1;
     }
 
     controlMainCharacter() {
@@ -565,7 +600,7 @@ class Game {
     moveMainCharacter() {
         // -- Acceleration
         if (this.mainCharacter.direction[1] < SHGRAVITY) {
-            this.mainCharacter.direction[1] += VERTICAL_SHTEP;
+            // this.mainCharacter.direction[1] += VERTICAL_SHTEP;
         }
 
         // -- Horizontal
@@ -590,14 +625,15 @@ class Game {
 
         if (newY - yMargin > REFERENCE_HEIGHT) {
             // console.debug("Death.");
-            // zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Death (Powerup 134 - Mutation 4)
-            // this.initialize();
+            zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Death (Powerup 134 - Mutation 4)
+            this.initialize();
         }
     }
 
     engine() {
+        // Asteroids
         this.manageAsteroidWaves();
-
+        this.moveAsteroids();
         /*        
                 
                         // -- Movements
@@ -645,10 +681,10 @@ class Game {
                             }
                         }
                 */
-        // Control
+        // -- Control
         this.controlMainCharacter();
 
-        // Movements
+        // -- Movements
         if (this.mainCharacter.boost > 0) {
             this.mainCharacter.boost -= 1;
         }
