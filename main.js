@@ -110,7 +110,6 @@ class Asteroids {
 
         // for readability
         const tailDelta = 4; // @TODO fix tail angle
-        const boumDelta = 4;
 
         let diameter = this.diameter;
         let x = this.position[0];
@@ -143,21 +142,13 @@ class Asteroids {
             drawCenteredRound(ctx, x, y, diameter / 2, "black", "white")
         }
         else {
-            diameter = 10; // + (currentStep - this.funeralStep) * boumDelta; @TODO fix
-            if (diameter > 150) {
+            const boumDelta = 6;
+            let deltaStep = currentStep - this.funeralStep;
+            const radius = 10 + deltaStep * boumDelta; //@TODO fix
+            if (radius > SIZES.ASTEROID_MAX * 2) {
                 return;
             }
-            ctx.beginPath();
-            ctx.fillStyle = this.color;
-            ctx.strokeStyle = this.color;
-            ctx.arc(
-                x,
-                y,
-                (diameter / 2) * SQUARE_ROOT_2,
-                0, Math.PI * 2, false);
-            ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
+            drawCenteredRound(ctx, x, y, radius, null, this.color);
         }
     };
 }
@@ -426,7 +417,6 @@ class Game {
 
             for (let i = 0; i < waveLength; i++) {
                 let color = RAINBOW[this.waveNum % RAINBOW.length];
-                // @TODO remove debug positions
                 // x debug for debug = i * SIZES.ASTEROID_MAX
                 let x = Math.floor(Math.random() * (REFERENCE_WIDTH / 2) + (REFERENCE_WIDTH / 4));
                 let y = -SIZES.ASTEROID_MAX - i * VERTICAL_DELAY; // @TODO add randomness to delay
@@ -722,7 +712,6 @@ class Game {
         this.ctx.textAlign = "center";
         this.ctx.fillText(this.score, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4);
 
-        // @TODO draw best score well centered
         if (this.state == GAME_STATE.WAIT) {
             //     this.ctx.font = "20px Helvetica";
             //     this.ctx.fillText("SCORE", REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4);
@@ -803,6 +792,5 @@ function main() {
 }
 
 main();
-
 
 // @TODO fix ear size
