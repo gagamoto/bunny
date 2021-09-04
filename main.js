@@ -52,6 +52,7 @@ const DEGREES = Math.PI / 180;
 // Engine
 const SHGRAVITY = 6;
 const VERTICAL_SHTEP = 1;
+const BOOST = 16;
 const CRUISE_SPEED = 3;
 const TURNING_DELAY = 350; // unit = steps (1 step = 1/60 second)
 const GAME_STATE = {
@@ -487,28 +488,29 @@ class Game {
         if (this.mainCharacter.falling) { return; }
 
         // -- Turn
-        if (CTRL_spacePressed && !this.mainCharacter.turning) {
-            if (Date.now() - CTRL_spacePressedTime > TURNING_DELAY) {
-                this.mainCharacter.turn();
-            }
+        if (CTRL_spacePressed &&
+            !this.mainCharacter.turning &&
+            (Date.now() - CTRL_spacePressedTime > TURNING_DELAY)
+        ) {
+            this.mainCharacter.turn();
         }
 
-        // // -- Boost
-        // if (CTRL_spacePressed && !this.boosting) {
-        //     // SOUNDS.BOOST
-        //     this.mainCharacter.boost = this.params.BOOST - this.mainCharacter.powerMalus;
-        //     this.boosting = true;
-        //     let pitch = 80 + 80 * Math.random();
-        //     zzfx(...[1.27, , pitch, .02, .07, .09, 1, 1.23, 2.1, .8, , , , , , , .01, .97, .01, .18]); // Shoot 67
-        // }
+        // -- Boost
+        if (CTRL_spacePressed && !this.mainCharacter.boosting) {
+            this.mainCharacter.boosting = true;
+            this.mainCharacter.boost = BOOST - this.mainCharacter.powerMalus;
+            const pitch = 80; // @TODO Math.random(); ?
+            zzfx(...[1.27, , pitch, .02, .07, .09, 1, 1.23, 2.1, .8, , , , , , , .01, .97, .01, .18]); // Shoot 67
+        }
         // if (this.mainCharacter.position[1] < 0) {
         //     this.mainCharacter.boost = 0;
         // }
-        // if (!CTRL_spacePressed) {
-        //     this.boosting = false;
-        //     this.turning = false;
-        // }
+        if (!CTRL_spacePressed) {
+            this.mainCharacter.boosting = false;
+            this.mainCharacter.turning = false;
+        }
     }
+
     moveMainCharacter() {
         // -- Acceleration
         if (this.mainCharacter.direction[1] < SHGRAVITY) {
