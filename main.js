@@ -202,25 +202,22 @@ class Character {
         let x = this.position[0];
         let y = this.position[1] + this.waitShift;
 
-        //     // Tail
-        //     for (let i = 0; i < this.fifouTail.length; i++) {
-        //         ctx.beginPath();
-        //         let color = RAINBOW[this.fifouTail[i][2]];
-        //         let size = 10 - i - (RAINBOW.length - this.fifouTail.length); // fix: start with smaller tail
-        //         if (this.powerMalus > 0) {
-        //             size = 3;
-        //         }
-        //         // ctx.fillStyle = "black";
-        //         ctx.strokeStyle = color;
-        //         ctx.arc(
-        //             this.fifouTail[i][0] - width / 2 + width * backward,
-        //             this.fifouTail[i][1] + height / 6,
-        //             size * SQUARE_ROOT_2,
-        //             0, Math.PI * 2, false);
-        //         // ctx.fill();
-        //         ctx.stroke();
-        //         ctx.closePath();
-        //     }
+        // Tail
+        const minSize = 4;
+        const maxSize = 12;
+        const tailCenter = [
+            - width / 2 + width * backward,
+            height / 6
+        ];
+
+        for (let i = 0; i < this.fifouTail.length; i++) {
+            let color = RAINBOW[this.fifouTail[i][2]];
+            let radius = maxSize - i - (RAINBOW.length - this.fifouTail.length); // fix: start with smaller tail
+            if (radius < minSize || this.powerMalus > 0) {
+                radius = minSize;
+            }
+            drawCenteredRound(ctx, this.fifouTail[i][0] + tailCenter[0], this.fifouTail[i][1] + tailCenter[1], radius, null, color);
+        }
 
         //     ctx.lineWidth = 2;
         //     // Ear back
@@ -502,12 +499,35 @@ class Game {
             const pitch = 80; // @TODO Math.random(); ?
             zzfx(...[1.27, , pitch, .02, .07, .09, 1, 1.23, 2.1, .8, , , , , , , .01, .97, .01, .18]); // Shoot 67
         }
-        // if (this.mainCharacter.position[1] < 0) {
-        //     this.mainCharacter.boost = 0;
-        // }
+
+        if (this.mainCharacter.position[1] < 0) {
+            this.mainCharacter.boost = 0; // Icarus lock
+        }
+
         if (!CTRL_spacePressed) {
             this.mainCharacter.boosting = false;
             this.mainCharacter.turning = false;
+        }
+    }
+
+    tailMainCharacter() {
+        const tailStepSize = 4;
+        if (this.step % tailStepSize != 0) { return; }
+
+        if (this.mainCharacter.falling) {
+            this.mainCharacter.fifouTail.shift();
+        }
+        else {
+            let tailIndex = this.step / tailStepSize % RAINBOW.length; // color index
+
+            let position = Object.assign({}, this.mainCharacter.position); // hard copy
+            this.mainCharacter.fifouTail.push(
+                [position[0], position[1], tailIndex]
+            );
+
+            if (this.mainCharacter.fifouTail.length > RAINBOW.length) {
+                this.mainCharacter.fifouTail.shift();
+            }
         }
     }
 
@@ -545,8 +565,6 @@ class Game {
     }
 
     engine() {
-        const tailStepSize = 4;
-
         /*        // Asteroids waves
                 // -- Clean-up
                 if (this.asteroidCorpses.length) {
@@ -643,24 +661,8 @@ class Game {
                 if (!this.mainCharacter.falling && this.mainCharacter.powerMalus > 0) {
                     this.mainCharacter.powerMalus -= .01;
                 }
-                // -- Tail
-                if (this.step % tailStepSize == 0) {
-                    if (this.mainCharacter.falling) {
-                        this.mainCharacter.fifouTail.shift();
-                    }
-                    else {
-                        let tailIndex = this.step / tailStepSize % RAINBOW.length; // to retrieve color
-        
-                        let position = Object.assign({}, this.mainCharacter.position);
-                        this.mainCharacter.fifouTail.push(
-                            [position[0], position[1], tailIndex]
-                        );
-                        if (this.mainCharacter.fifouTail.length > RAINBOW.length - this.mainCharacter.powerMalus) {
-                            this.mainCharacter.fifouTail.shift();
-                        }
-                    }
-                }
         */
+        this.tailMainCharacter();
         this.moveMainCharacter();
 
         // Survival
