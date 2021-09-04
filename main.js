@@ -671,22 +671,17 @@ class Game {
     draw() {
         this.ctx.clearRect(0, 0, this.ctx.canvas.clientWidth, this.ctx.canvas.clientHeight);
         this.drawBackground();
-
-        // if (this.state == GAME_STATE.WAIT) {
-        //     this.drawTheRainbow();
-        // }
-
+        if (this.state == GAME_STATE.WAIT) {
+            this.drawTheRainbow();
+        }
         this.mainCharacter.draw(this.ctx, this.step);
-
         // for (let asteroid of this.asteroids) {
         //     asteroid.draw(this.ctx, this.params.FACTOR, this.step);
         // }
         // for (let asteroid of this.asteroidCorpses) {
         //     asteroid.draw(this.ctx, this.step);
         // }
-
         this.drawScore();
-
         if (this.state == GAME_STATE.WAIT) {
             this.drawInstructions();
         }
@@ -733,6 +728,29 @@ class Game {
         }
     }
 
+    drawTheRainbow() {
+        this.ctx.beginPath();
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeStyle = "white";
+        this.ctx.moveTo(0, REFERENCE_HEIGHT * .7);
+        this.ctx.lineTo(REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 2);
+        this.ctx.stroke();
+        this.ctx.closePath();
+
+        for (let i = 0; i < RAINBOW.length; i++) {
+            const girth = 10;
+            this.ctx.beginPath();
+            this.ctx.lineWidth = girth;
+            this.ctx.strokeStyle = RAINBOW[i];
+            this.ctx.moveTo(REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 2);
+            this.ctx.lineTo(
+                REFERENCE_WIDTH + girth,
+                - RAINBOW.length * girth / 2 + REFERENCE_HEIGHT * .7 + i * girth);
+            this.ctx.stroke();
+            this.ctx.closePath();
+        }
+    }
+
     drawScore() {
         this.score = 623; // @TODO debug value to remove
         this.best = 1623; // @TODO debug value to remove
@@ -774,29 +792,6 @@ class Game {
         this.ctx.font = "bolder " + String(fontSize) + "px Arial";
         this.ctx.fillText("TAP SPACE", REFERENCE_WIDTH / 2, 3 * REFERENCE_HEIGHT / 4);
         this.ctx.fillText("DO NOT FALL", REFERENCE_WIDTH / 2, 3 * REFERENCE_HEIGHT / 4 + fontSize * 1.3);
-    }
-
-    drawTheRainbow() {
-        this.ctx.beginPath();
-        this.ctx.lineWidth = 2;
-        this.ctx.strokeStyle = "white";
-        this.ctx.moveTo(0, REFERENCE_HEIGHT * .7);
-        this.ctx.lineTo(REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 2);
-        this.ctx.stroke();
-        this.ctx.closePath();
-
-        for (let i = 0; i < RAINBOW.length; i++) {
-            const girth = 10 * this.params.FACTOR;
-            this.ctx.beginPath();
-            this.ctx.lineWidth = girth;
-            this.ctx.strokeStyle = RAINBOW[i];
-            this.ctx.moveTo(REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 2);
-            this.ctx.lineTo(
-                REFERENCE_WIDTH + girth,
-                - RAINBOW.length * girth / 2 + REFERENCE_HEIGHT * .7 + i * girth);
-            this.ctx.stroke();
-            this.ctx.closePath();
-        }
     }
 }
 
