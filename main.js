@@ -50,16 +50,19 @@ const SQUARE_ROOT_2 = 1.41421356237;
 const DEGREES = Math.PI / 180;
 
 // Engine
+const SHGRAVITY = 6;
+const VERTICAL_SHTEP = 1;
+const CRUISE_SPEED = 3;
 const TURNING_DELAY = 350; // unit = steps (1 step = 1/60 second)
 const GAME_STATE = {
     WAIT: 0,
     PLAY: 1
-}
+};
 const SIZES = {
     RABBIT: 30,
     ASTEROID_MIN: 10,
     ASTEROID_MAX: 50
-}
+};
 
 function drawCenteredRect(ctx = null, x = 0, y = 0, w = 0, h = 0, fillStyle = "white", strokeStyle = null, strokeWidth = 2) {
     ctx.fillStyle = fillStyle;
@@ -342,11 +345,7 @@ class Character {
 
 class Params {
     constructor() {
-        // @TODO: Math.round() the values?
-        this.SHGRAVITY = 6;
-        this.BOOST = 16; // @TODO do not factor BOOST, factor only the downward vertical steps
-        this.CRUISE_SPEED = 3;
-        this.VERTICAL_DELAY = 200;
+        // remove
     }
 }
 
@@ -380,7 +379,7 @@ class Game {
 
         this.mainCharacter = new Character(
             [REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 2],
-            this.params.CRUISE_SPEED
+            CRUISE_SPEED
         );
 
         this.asteroids = [];
@@ -485,11 +484,17 @@ class Game {
     }
 
     moveMainCharacter() {
-        const xMargin = this.mainCharacter.width / 4;
+        // -- Acceleration
+        if (this.mainCharacter.direction[1] < SHGRAVITY) {
+            this.mainCharacter.direction[1] += VERTICAL_SHTEP;
+        }
 
         // -- Horizontal
-        let newX = null;
-        newX = this.mainCharacter.position[0] + this.mainCharacter.direction[0];
+        const xMargin = this.mainCharacter.width / 4;
+        let newX = this.mainCharacter.position[0] + this.mainCharacter.direction[0];
+        this.mainCharacter.position[0] = newX;
+
+
         if ((newX - xMargin > REFERENCE_WIDTH) || (newX + xMargin < 0)) {
             // -- Auto turn
             this.mainCharacter.turn();
@@ -498,21 +503,17 @@ class Game {
             // if (this.mainCharacter.direction[0] > 0) { this.mainCharacter.position[0] = 0; }
             // else { this.mainCharacter.position[0] = REFERENCE_WIDTH; }
         }
-        else {
-            this.mainCharacter.position[0] = newX;
+
+        // -- Vertical
+        const yMargin = this.mainCharacter.height;
+        let newY = this.mainCharacter.position[1] + this.mainCharacter.direction[1] - this.mainCharacter.boost;
+        this.mainCharacter.position[1] = newY
+
+        if (newY - yMargin > REFERENCE_HEIGHT ) {
+            // console.debug("Death.");
+            zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Death (Powerup 134 - Mutation 4)
+            this.initialize();
         }
-        /*
-                // -- Vertical
-                newPosition = this.mainCharacter.position[1] + this.mainCharacter.direction[1] - this.mainCharacter.boost;
-                if (newPosition - this.mainCharacter.height > REFERENCE_HEIGHT ) {
-                    // console.debug("Death.");
-                    zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Death (Powerup 134 - Mutation 4)
-                    this.initialize();
-                }
-                else {
-                    this.mainCharacter.position[1] = newPosition
-                }
-                */
     }
 
     engine() {
@@ -631,9 +632,6 @@ class Game {
         */
         // Movements
         /*
-                if (this.mainCharacter.direction[1] < this.params.SHGRAVITY) {
-                    this.mainCharacter.direction[1] += this.params.FACTOR;
-                }
                 if (this.mainCharacter.boost > 0) {
                     this.mainCharacter.boost -= Math.min(this.params.FACTOR, this.mainCharacter.boost);
                 }
