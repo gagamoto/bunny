@@ -61,11 +61,19 @@ const SIZES = {
     ASTEROID_MAX: 50
 }
 
-function drawCenteredRect(ctx = null, x = 0, y = 0, w = 0, h = 0, fillStyle = "white", strokeStyle = null, strokeWidth = null) {
+function drawCenteredRect(ctx = null, x = 0, y = 0, w = 0, h = 0, fillStyle = "white", strokeStyle = null, strokeWidth = 2) {
+    ctx.fillStyle = fillStyle;
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = strokeWidth;
 
+    ctx.beginPath();
+    ctx.rect(x - w / 2, y - h / 2, w, h);
+    if (fillStyle) { ctx.fill(); }
+    if (strokeStyle) { ctx.stroke(); }
+    ctx.closePath();
 }
 
-function drawCenteredRound(ctx = null, x = 0, y = 0, radius = 0, fillStyle = "white", strokeStyle = null, strokeWidth = null) {
+function drawCenteredRound(ctx = null, x = 0, y = 0, radius = 0, fillStyle = "white", strokeStyle = null, strokeWidth = 2) {
     ctx.fillStyle = fillStyle;
     ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = strokeWidth;
@@ -177,8 +185,6 @@ class Character {
     };
 
     draw(ctx, currentStep = 0) {
-        ctx.lineWidth = 2;
-
         // Reference square
         let backward = (this.direction[0] < 0);
         let width = this.width;
@@ -186,156 +192,145 @@ class Character {
         let x = this.position[0];
         let y = this.position[1] + this.waitShift;
 
-        // Tail
-        for (let i = 0; i < this.fifouTail.length; i++) {
-            ctx.beginPath();
-            let color = RAINBOW[this.fifouTail[i][2]];
-            let size = 10 - i - (RAINBOW.length - this.fifouTail.length); // fix: start with smaller tail
-            if (this.powerMalus > 0) {
-                size = 3;
-            }
-            // ctx.fillStyle = "black";
-            ctx.strokeStyle = color;
-            ctx.arc(
-                this.fifouTail[i][0] - width / 2 + width * backward,
-                this.fifouTail[i][1] + height / 6,
-                size * SQUARE_ROOT_2,
-                0, Math.PI * 2, false);
-            // ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
-        }
+        //     // Tail
+        //     for (let i = 0; i < this.fifouTail.length; i++) {
+        //         ctx.beginPath();
+        //         let color = RAINBOW[this.fifouTail[i][2]];
+        //         let size = 10 - i - (RAINBOW.length - this.fifouTail.length); // fix: start with smaller tail
+        //         if (this.powerMalus > 0) {
+        //             size = 3;
+        //         }
+        //         // ctx.fillStyle = "black";
+        //         ctx.strokeStyle = color;
+        //         ctx.arc(
+        //             this.fifouTail[i][0] - width / 2 + width * backward,
+        //             this.fifouTail[i][1] + height / 6,
+        //             size * SQUARE_ROOT_2,
+        //             0, Math.PI * 2, false);
+        //         // ctx.fill();
+        //         ctx.stroke();
+        //         ctx.closePath();
+        //     }
 
-        ctx.lineWidth = 2;
-        // Ear back
-        ctx.beginPath();
-        ctx.fillStyle = "white";
-        ctx.strokeStyle = "black";
-        ctx.arc(
-            x + (width / 4) * !backward - (width / 4) * backward, // @TODO factorize the shift
-            y - height / 2,
-            (width / 8) * SQUARE_ROOT_2,
-            0, Math.PI * 2, false);
-        ctx.fill();
-        ctx.stroke();
-        ctx.closePath();
+        //     ctx.lineWidth = 2;
+        //     // Ear back
+        //     ctx.beginPath();
+        //     ctx.fillStyle = "white";
+        //     ctx.strokeStyle = "black";
+        //     ctx.arc(
+        //         x + (width / 4) * !backward - (width / 4) * backward, // @TODO factorize the shift
+        //         y - height / 2,
+        //         (width / 8) * SQUARE_ROOT_2,
+        //         0, Math.PI * 2, false);
+        //     ctx.fill();
+        //     ctx.stroke();
+        //     ctx.closePath();
 
         // Body
         let shift = 0;
         if (this.falling) {
             shift = Math.sin(currentStep) * 2;
         }
-        ctx.beginPath();
-        ctx.fillStyle = "white";
-        ctx.strokeStyle = "black";
-        ctx.rect(
-            x - width / 2 + shift,
-            y - width / 2,
-            width,
-            width
-        );
-        ctx.fill();
-        ctx.stroke();
-        ctx.closePath();
+        drawCenteredRect(ctx, x + shift, y, width, height, "white", "black")
 
-        // Ear front
-        ctx.beginPath();
-        ctx.fillStyle = "white";
-        // ctx.strokeStyle = "black";
-        ctx.arc(
-            x - (width / 4) * !backward + (width / 4) * backward,
-            y - height / 2,
-            (width / 8) * SQUARE_ROOT_2,
-            0, Math.PI * 2, false);
-        ctx.fill();
-        // ctx.stroke();
-        ctx.closePath();
+        //     // Ear front
+        //     ctx.beginPath();
+        //     ctx.fillStyle = "white";
+        //     // ctx.strokeStyle = "black";
+        //     ctx.arc(
+        //         x - (width / 4) * !backward + (width / 4) * backward,
+        //         y - height / 2,
+        //         (width / 8) * SQUARE_ROOT_2,
+        //         0, Math.PI * 2, false);
+        //     ctx.fill();
+        //     // ctx.stroke();
+        //     ctx.closePath();
 
-        ctx.beginPath();
-        // ctx.fillStyle = "white";
-        ctx.strokeStyle = "black";
-        ctx.arc(
-            x - (width / 4) * !backward + (width / 4) * backward,
-            y - height / 2,
-            (width / 8) * SQUARE_ROOT_2,
-            Math.PI * 1, Math.PI * 2, false);
-        // ctx.fill();
-        ctx.stroke();
-        ctx.closePath();
+        //     ctx.beginPath();
+        //     // ctx.fillStyle = "white";
+        //     ctx.strokeStyle = "black";
+        //     ctx.arc(
+        //         x - (width / 4) * !backward + (width / 4) * backward,
+        //         y - height / 2,
+        //         (width / 8) * SQUARE_ROOT_2,
+        //         Math.PI * 1, Math.PI * 2, false);
+        //     // ctx.fill();
+        //     ctx.stroke();
+        //     ctx.closePath();
 
-        // Eye left
-        if (this.falling || this.powerMalus > 0) {
-            ctx.beginPath();
-            ctx.fillStyle = "white";
-            ctx.strokeStyle = "black";
-            ctx.arc(
-                x, // + (width / 6) * backward - (width / 6) * !backward, // @TODO factorize the shift
-                y,
-                (width / 12) * SQUARE_ROOT_2,
-                0, Math.PI * 2, false);
-            // ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
-        }
-        if (!this.falling) {
-            ctx.beginPath();
-            ctx.fillStyle = "black";
-            ctx.arc(
-                x,
-                y,
-                (width / 32) * SQUARE_ROOT_2,
-                0, Math.PI * 2, false);
-            ctx.fill();
-            ctx.closePath();
-        }
+        //     // Eye left
+        //     if (this.falling || this.powerMalus > 0) {
+        //         ctx.beginPath();
+        //         ctx.fillStyle = "white";
+        //         ctx.strokeStyle = "black";
+        //         ctx.arc(
+        //             x, // + (width / 6) * backward - (width / 6) * !backward, // @TODO factorize the shift
+        //             y,
+        //             (width / 12) * SQUARE_ROOT_2,
+        //             0, Math.PI * 2, false);
+        //         // ctx.fill();
+        //         ctx.stroke();
+        //         ctx.closePath();
+        //     }
+        //     if (!this.falling) {
+        //         ctx.beginPath();
+        //         ctx.fillStyle = "black";
+        //         ctx.arc(
+        //             x,
+        //             y,
+        //             (width / 32) * SQUARE_ROOT_2,
+        //             0, Math.PI * 2, false);
+        //         ctx.fill();
+        //         ctx.closePath();
+        //     }
 
-        // Eye right
-        if (this.falling || this.powerMalus > 0) {
-            ctx.beginPath();
-            ctx.fillStyle = "white";
-            ctx.strokeStyle = "black";
-            ctx.arc(
-                x + (width / 3) * !backward - (width / 3) * backward, // @TODO factorize the shift
-                y,
-                (width / 12) * SQUARE_ROOT_2,
-                0, Math.PI * 2, false);
-            // ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
-        }
-        if (!this.falling) {
-            ctx.beginPath();
-            ctx.fillStyle = "black";
-            ctx.arc(
-                x + (width / 3) * !backward - (width / 3) * backward,
-                y,
-                (width / 32) * SQUARE_ROOT_2,
-                0, Math.PI * 2, false);
-            ctx.fill();
-            ctx.closePath();
-        }
+        //     // Eye right
+        //     if (this.falling || this.powerMalus > 0) {
+        //         ctx.beginPath();
+        //         ctx.fillStyle = "white";
+        //         ctx.strokeStyle = "black";
+        //         ctx.arc(
+        //             x + (width / 3) * !backward - (width / 3) * backward, // @TODO factorize the shift
+        //             y,
+        //             (width / 12) * SQUARE_ROOT_2,
+        //             0, Math.PI * 2, false);
+        //         // ctx.fill();
+        //         ctx.stroke();
+        //         ctx.closePath();
+        //     }
+        //     if (!this.falling) {
+        //         ctx.beginPath();
+        //         ctx.fillStyle = "black";
+        //         ctx.arc(
+        //             x + (width / 3) * !backward - (width / 3) * backward,
+        //             y,
+        //             (width / 32) * SQUARE_ROOT_2,
+        //             0, Math.PI * 2, false);
+        //         ctx.fill();
+        //         ctx.closePath();
+        //     }
 
-        // Cheeks left
-        ctx.beginPath();
-        ctx.fillStyle = "rgba(255, 125, 125, .5)";
-        ctx.arc(
-            x + (width / 3),
-            y + height / 3,
-            (width / 12) * SQUARE_ROOT_2,
-            0, Math.PI * 2, false);
-        ctx.fill();
-        ctx.closePath();
+        //     // Cheeks left
+        //     ctx.beginPath();
+        //     ctx.fillStyle = "rgba(255, 125, 125, .5)";
+        //     ctx.arc(
+        //         x + (width / 3),
+        //         y + height / 3,
+        //         (width / 12) * SQUARE_ROOT_2,
+        //         0, Math.PI * 2, false);
+        //     ctx.fill();
+        //     ctx.closePath();
 
-        // Cheeks right
-        ctx.beginPath();
-        ctx.fillStyle = "rgba(255, 125, 125, .5)";
-        ctx.arc(
-            x - (width / 3),
-            y + height / 3,
-            (width / 12) * SQUARE_ROOT_2,
-            0, Math.PI * 2, false);
-        ctx.fill();
-        ctx.closePath();
+        //     // Cheeks right
+        //     ctx.beginPath();
+        //     ctx.fillStyle = "rgba(255, 125, 125, .5)";
+        //     ctx.arc(
+        //         x - (width / 3),
+        //         y + height / 3,
+        //         (width / 12) * SQUARE_ROOT_2,
+        //         0, Math.PI * 2, false);
+        //     ctx.fill();
+        //     ctx.closePath();
     }
 };
 
@@ -681,7 +676,7 @@ class Game {
         //     this.drawTheRainbow();
         // }
 
-        // this.mainCharacter.draw(this.ctx, this.step);
+        this.mainCharacter.draw(this.ctx, this.step);
 
         // for (let asteroid of this.asteroids) {
         //     asteroid.draw(this.ctx, this.params.FACTOR, this.step);
@@ -690,7 +685,7 @@ class Game {
         //     asteroid.draw(this.ctx, this.step);
         // }
 
-        // this.drawScore();
+        this.drawScore();
 
         // if (this.state == GAME_STATE.WAIT) {
         //     this.drawInstructions();
@@ -709,41 +704,37 @@ class Game {
     }
 
     drawScore() {
+        this.score = 623; // @TODO debug value to remove
+        this.best = 1623; // @TODO debug value to remove
         if (this.score === null) {
             return;
         }
-        this.ctx.beginPath();
+
+        const fontSize = 60;
+        this.ctx.font = String(fontSize) + "px Helvetica";
         this.ctx.fillStyle = "white";
-        this.ctx.strokeStyle = "black";
         this.ctx.textAlign = "center";
-        let fontSize = 60 * this.params.FACTOR;
-        this.ctx.font = "60px Helvetica";
-        this.ctx.fillText(this.score, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 - 10);
-        this.ctx.closePath();
+        this.ctx.fillText(this.score, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4);
 
-        if (this.state == GAME_STATE.WAIT) {
-            const size = 140;
+        // @TODO draw best score well centered
+        // if (this.state == GAME_STATE.WAIT) {
+        //     const size = fontSize * 2;
 
-            this.ctx.font = "20px Helvetica";
-            this.ctx.fillText("SCORE", REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 - size / 2);
+        //     this.ctx.font = "20px Helvetica";
+        //     this.ctx.fillText("SCORE", REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 - size / 2 + 6);
 
-            if (this.best !== null) {
-                this.ctx.font = "14px Arial";
-                let message = "BEST: " + this.best;
-                this.ctx.fillText(message, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 - size / 2 + 90);
-            }
+        //     if (this.best !== null) {
+        //         this.ctx.font = "14px Arial";
+        //         let message = "BEST: " + this.best;
+        //         this.ctx.fillText(message, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 );
+        //     }
 
-            this.ctx.beginPath();
-            this.ctx.strokeStyle = "white";
-            this.ctx.rect(
-                REFERENCE_WIDTH / 2 - size / 2,
-                REFERENCE_HEIGHT / 4 - 3 * size / 4,
-                size,
-                size
-            );
-            this.ctx.stroke();
-            this.ctx.closePath();
-        }
+        //     drawCenteredRect(
+        //         this.ctx, REFERENCE_WIDTH / 2,
+        //         REFERENCE_HEIGHT / 4 - fontSize / 2,
+        //         size, size, null, "white"
+        //     );
+        // }
     }
 
     drawBackground() {
@@ -755,6 +746,8 @@ class Game {
         let intensity = 1;
         let waver = 0;
 
+        // @TODO fade
+        // @TODO wave
         // if (this.step < fadeSpeed) {
         //     intensity = this.step % fadeSpeed / fadeSpeed; // Fade in blue
         // }
@@ -772,7 +765,7 @@ class Game {
 
         // Stars
         const color = "rgba(255, 255, 255, " + String(intensity) + ")";
-        if (this.state == GAME_STATE.PLAY || true) {
+        if (this.state == GAME_STATE.PLAY || true) { // @TODO only in PLAY
             for (let star of this.stars) {
                 drawCenteredRound(
                     this.ctx,
