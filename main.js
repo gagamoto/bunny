@@ -169,8 +169,9 @@ class Character {
         this.boost = 0;
         this.boosting = false;
         this.turning = false;
+        this.recovering = 0;
         this.falling = 0;
-        this.powerMalus = 0;
+        this.powerMalus = 0; // a kind of damage
 
         this.width = SIZES.RABBIT; // @TODO remove?
         this.height = SIZES.RABBIT; // @TODO remove?
@@ -203,8 +204,12 @@ class Character {
         for (let i = 0; i < this.fifouTail.length; i++) {
             let color = RAINBOW[this.fifouTail[i][2]];
             let radius = maxSize - i - (RAINBOW.length - this.fifouTail.length); // fix: start with smaller tail
-            if (radius < minSize || this.powerMalus > 0) {
+            if (radius < minSize) {
                 radius = minSize;
+            }
+            if (this.recovering > 0) {
+                radius = minSize;
+                color = "white";
             }
             drawCenteredRound(ctx, this.fifouTail[i][0] + tailCenter[0], this.fifouTail[i][1] + tailCenter[1], radius, null, color);
         }
@@ -447,6 +452,7 @@ class Game {
             }
 
             // close enough (danger zone)
+            // @TODO color the danger zone
             let limitSquareDistance = (rabbitRadius + asteroidRadius) * (rabbitRadius + asteroidRadius);
             let squareHorizontal = horizontalDistance * horizontalDistance;
             let squareVertical = verticalDistance * verticalDistance;
@@ -487,7 +493,7 @@ class Game {
                 let color = RAINBOW[this.waveNum % RAINBOW.length];
                 // @TODO remove debug positions
                 let x = i * SIZES.ASTEROID_MAX; // Math.floor(Math.random() * (REFERENCE_WIDTH / 2) + (REFERENCE_WIDTH / 4));
-                let y = i * SIZES.ASTEROID_MAX; // 0 - i * this.params.VERTICAL_DELAY; // @TODO add randomness to delay
+                let y = REFERENCE_HEIGHT / 8; // 0 - i * this.params.VERTICAL_DELAY; // @TODO add randomness to delay
                 let asteroid = new Asteroids([x, y], color);
 
                 let horizontalDirection = Math.floor(Math.random() * CRUISE_SPEED * 2);
@@ -561,7 +567,10 @@ class Game {
         // -- Boost
         if (CTRL_spacePressed && !this.mainCharacter.boosting) {
             this.mainCharacter.boosting = true;
-            this.mainCharacter.boost = BOOST - this.mainCharacter.powerMalus;
+            this.mainCharacter.boost = BOOST
+            if (this.mainCharacter.recovering){
+                this.mainCharacter.boost -= this.mainCharacter.powerMalus;
+            }
             const pitch = 80; // @TODO Math.random(); ?
             zzfx(...[1.27, , pitch, .02, .07, .09, 1, 1.23, 2.1, .8, , , , , , , .01, .97, .01, .18]); // Shoot 67
         }
@@ -591,7 +600,11 @@ class Game {
                 [position[0], position[1], tailIndex]
             );
 
-            if (this.mainCharacter.fifouTail.length > RAINBOW.length) {
+            let length = RAINBOW.length - this.mainCharacter.powerMalus;
+            if (this.mainCharacter.recovering) {
+                length = 2;
+            }
+            if (this.mainCharacter.fifouTail.length > length) {
                 this.mainCharacter.fifouTail.shift();
             }
         }
@@ -600,7 +613,7 @@ class Game {
     moveMainCharacter() {
         // -- Acceleration
         if (this.mainCharacter.direction[1] < SHGRAVITY) {
-            // this.mainCharacter.direction[1] += VERTICAL_SHTEP;
+            this.mainCharacter.direction[1] += VERTICAL_SHTEP;
         }
 
         // -- Horizontal
@@ -634,84 +647,47 @@ class Game {
         // Asteroids
         this.manageAsteroidWaves();
         this.moveAsteroids();
-        /*        
-                
-                        // -- Movements
-                        for (let asteroid of this.asteroids) {
-                            if (!asteroid.still_alive) {
-                                continue;
-                            }
-                            // -- Tail
-                            if (this.step % (tailStepSize) == 0) {
-                                let position = Object.assign({}, asteroid.position);
-                                asteroid.fifouTail.push(
-                                    [position[0], position[1], null]
-                                );
-                                if (asteroid.fifouTail.length > RAINBOW.length) {
-                                    asteroid.fifouTail.shift();
-                                }
-                            }
-                
-                            // -- Horizontal
-                            let newPosition = asteroid.position[0] + asteroid.direction[0];
-                            if (false) { } // placeholder for fix if needed
-                            else {
-                                asteroid.position[0] = newPosition
-                            }
-                
-                            // -- Vertical
-                            if (asteroid.direction[1] < this.params.SHGRAVITY * 1.1) {
-                                asteroid.direction[1] += this.params.FACTOR;
-                            }
-                
-                            newPosition = asteroid.position[1] + asteroid.direction[1];
-                            if (false) { } // placeholder for fix if needed
-                            else {
-                                asteroid.position[1] = newPosition
-                            }
-                
-                            // -- Badaboum
-                            if (
-                                (asteroid.position[1] > REFERENCE_HEIGHT) ||
-                                (asteroid.position[0] > REFERENCE_WIDTH) ||
-                                (asteroid.position[0] < 0)
-                            ) {
-                                // console.debug("Badaboum.");
-                                this.badaboum(asteroid);
-                            }
-                        }
-                */
-        // -- Control
+
+        // Main Character
         this.controlMainCharacter();
 
-        // -- Movements
+        // Decrease temporary attributes
         if (this.mainCharacter.boost > 0) {
             this.mainCharacter.boost -= 1;
         }
-        /*
-                if (this.mainCharacter.falling > 0) {
-                    this.mainCharacter.falling -= this.params.FACTOR;
-                }
-                if (!this.mainCharacter.falling && this.mainCharacter.powerMalus > 0) {
-                    this.mainCharacter.powerMalus -= .01;
-                }
-        */
+        if (this.mainCharacter.falling > 0) {
+            this.mainCharacter.falling -= 1; // recover from the fall
+
+            if (this.mainCharacter.falling == 0) { this.mainCharacter.recovering = 2 * SHMECOND; }
+        }
+        if (this.mainCharacter.recovering > 0) {
+            this.mainCharacter.recovering -= 1; // recover from the fall
+        }
+        // if (!this.mainCharacter.falling && this.mainCharacter.powerMalus > 0) {
+        //     this.mainCharacter.powerMalus -= .01; // not decided yet if it should stay or not
+        // }
+
+        // -- Movements
         this.tailMainCharacter();
         this.moveMainCharacter();
 
         // Survival
-        /*
-                if (this.collisions()) {
-                    // console.debug("Immminent death.");
-                    zzfx(...[2, , 416, , .01, .17, 4, .23, , , , , , .5, , .4, .02, .63, .02]); // Falling (Hit 183)
-                    this.mainCharacter.powerMalus += 2;
-                    this.mainCharacter.falling = (SHMECOND / 2) * this.mainCharacter.powerMalus;
-                    this.mainCharacter.boost = this.params.BOOST; // safe jumping effect on collision
-        
-                    let sustain = this.mainCharacter.falling / 100;
-                    zzfx(...[2.29, 0, 110, .02, sustain, .38, , 1.38, , , , , .19, .3, , , .16, .51, .02, .34]); // Music 194
-                }
-        */
+        if (this.collisions()) {
+            // -- Immminent death
+            zzfx(...[2, , 416, , .01, .17, 4, .23, , , , , , .5, , .4, .02, .63, .02]); // Falling (Hit 183)
+            this.mainCharacter.powerMalus += 1;
+            if (this.mainCharacter.recovering) {
+                this.mainCharacter.falling = SHMECOND * 4; // Death
+            }
+            else {
+                this.mainCharacter.falling = (SHMECOND / 2) * this.mainCharacter.powerMalus;
+            }
+            this.mainCharacter.boost = BOOST; // safe jumping effect on collision
+
+            let sustain = this.mainCharacter.falling / 100;
+            zzfx(...[2.29, 0, 110, .02, sustain, .38, , 1.38, , , , , .19, .3, , , .16, .51, .02, .34]); // Music 194
+        }
+
     };
 
     // Graphics
