@@ -52,6 +52,7 @@ const DEGREES = Math.PI / 180;
 // Engine
 const SHGRAVITY = 6;
 const VERTICAL_SHTEP = 1;
+const VERTICAL_DELAY = 100;
 const BOOST = 16;
 const CRUISE_SPEED = 3;
 const TURNING_DELAY = 350; // unit = steps (1 step = 1/60 second)
@@ -72,8 +73,8 @@ function drawCenteredRect(ctx = null, x = 0, y = 0, w = 0, h = 0, fillStyle = "w
 
     ctx.beginPath();
     ctx.rect(x - w / 2, y - h / 2, w, h);
-    if (fillStyle) { ctx.fill(); }
     if (strokeStyle) { ctx.stroke(); }
+    if (fillStyle) { ctx.fill(); }
     ctx.closePath();
 }
 
@@ -84,8 +85,8 @@ function drawCenteredRound(ctx = null, x = 0, y = 0, radius = 0, fillStyle = "wh
 
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, Math.PI * 2, false);
-    if (fillStyle) { ctx.fill(); }
-    if (strokeStyle) { ctx.stroke(); }
+    if (strokeStyle != null) { ctx.stroke(); }
+    if (fillStyle != null) { ctx.fill(); }
     ctx.closePath();
 }
 
@@ -103,13 +104,13 @@ class Asteroids {
         this.fifouTail = [];
     };
 
-    draw(ctx, factor = 1, currentStep = 0) {
+    draw(ctx, currentStep = 0) {
 
         ctx.lineWidth = 2;
 
         // for readability
-        const tailDelta = Math.round(4 * factor); // @TODO fix tail angle
-        const boumDelta = Math.round(4 * factor);
+        const tailDelta = 4; // @TODO fix tail angle
+        const boumDelta = 4;
 
         let diameter = this.diameter;
         let x = this.position[0];
@@ -142,7 +143,7 @@ class Asteroids {
             drawCenteredRound(ctx, x, y, diameter / 2, "black", "white")
         }
         else {
-            diameter = (10 * factor); // + (currentStep - this.funeralStep) * boumDelta; @TODO fix
+            diameter = 10; // + (currentStep - this.funeralStep) * boumDelta; @TODO fix
             if (diameter > 150) {
                 return;
             }
@@ -173,8 +174,8 @@ class Character {
         this.falling = 0;
         this.powerMalus = 0; // a kind of damage
 
-        this.width = SIZES.RABBIT; // @TODO remove?
-        this.height = SIZES.RABBIT; // @TODO remove?
+        this.width = SIZES.RABBIT;
+        this.height = SIZES.RABBIT;
         this.fifouTail = []; // drawing only
         this.waitShift = 0;
     };
@@ -188,6 +189,8 @@ class Character {
     draw(ctx, currentStep = 0) {
         // Reference square
         let backward = (this.direction[0] < 0);
+        let backwarder = - 1 * !backward + 1 * backward;
+        let shift = 0;
         let width = this.width;
         let height = this.height;
         let x = this.position[0];
@@ -214,133 +217,65 @@ class Character {
             drawCenteredRound(ctx, this.fifouTail[i][0] + tailCenter[0], this.fifouTail[i][1] + tailCenter[1], radius, null, color);
         }
 
-        //     ctx.lineWidth = 2;
-        //     // Ear back
-        //     ctx.beginPath();
-        //     ctx.fillStyle = "white";
-        //     ctx.strokeStyle = "black";
-        //     ctx.arc(
-        //         x + (width / 4) * !backward - (width / 4) * backward, // @TODO factorize the shift
-        //         y - height / 2,
-        //         (width / 8) * SQUARE_ROOT_2,
-        //         0, Math.PI * 2, false);
-        //     ctx.fill();
-        //     ctx.stroke();
-        //     ctx.closePath();
-
         // Body
-        let shift = 0;
+        shift = 0;
         if (this.falling) {
             shift = Math.sin(currentStep) * 2;
         }
         drawCenteredRect(ctx, x + shift, y, width, height, "white", "black")
 
-        //     // Ear front
-        //     ctx.beginPath();
-        //     ctx.fillStyle = "white";
-        //     // ctx.strokeStyle = "black";
-        //     ctx.arc(
-        //         x - (width / 4) * !backward + (width / 4) * backward,
-        //         y - height / 2,
-        //         (width / 8) * SQUARE_ROOT_2,
-        //         0, Math.PI * 2, false);
-        //     ctx.fill();
-        //     // ctx.stroke();
-        //     ctx.closePath();
+        // Ear back
+        shift = (width / 4) * backwarder;
+        drawCenteredRound(ctx, x + shift, y - (height / 2), (width / 8), "white", null);
 
-        //     ctx.beginPath();
-        //     // ctx.fillStyle = "white";
-        //     ctx.strokeStyle = "black";
-        //     ctx.arc(
-        //         x - (width / 4) * !backward + (width / 4) * backward,
-        //         y - height / 2,
-        //         (width / 8) * SQUARE_ROOT_2,
-        //         Math.PI * 1, Math.PI * 2, false);
-        //     // ctx.fill();
-        //     ctx.stroke();
-        //     ctx.closePath();
+        ctx.beginPath(); // half-square
+        ctx.strokeStyle = "black";
+        ctx.arc(
+            x + shift,
+            y - height / 2,
+            (width / 8) * SQUARE_ROOT_2,
+            Math.PI * 1, Math.PI * 2, false);
+        ctx.stroke();
+        ctx.closePath();
 
-        //     // Eye left
-        //     if (this.falling || this.powerMalus > 0) {
-        //         ctx.beginPath();
-        //         ctx.fillStyle = "white";
-        //         ctx.strokeStyle = "black";
-        //         ctx.arc(
-        //             x, // + (width / 6) * backward - (width / 6) * !backward, // @TODO factorize the shift
-        //             y,
-        //             (width / 12) * SQUARE_ROOT_2,
-        //             0, Math.PI * 2, false);
-        //         // ctx.fill();
-        //         ctx.stroke();
-        //         ctx.closePath();
-        //     }
-        //     if (!this.falling) {
-        //         ctx.beginPath();
-        //         ctx.fillStyle = "black";
-        //         ctx.arc(
-        //             x,
-        //             y,
-        //             (width / 32) * SQUARE_ROOT_2,
-        //             0, Math.PI * 2, false);
-        //         ctx.fill();
-        //         ctx.closePath();
-        //     }
+        // Ear center
+        shift = (width / 4) * backwarder;
+        drawCenteredRound(ctx, x - shift, y - (height / 2), (width / 8), "white", null);
 
-        //     // Eye right
-        //     if (this.falling || this.powerMalus > 0) {
-        //         ctx.beginPath();
-        //         ctx.fillStyle = "white";
-        //         ctx.strokeStyle = "black";
-        //         ctx.arc(
-        //             x + (width / 3) * !backward - (width / 3) * backward, // @TODO factorize the shift
-        //             y,
-        //             (width / 12) * SQUARE_ROOT_2,
-        //             0, Math.PI * 2, false);
-        //         // ctx.fill();
-        //         ctx.stroke();
-        //         ctx.closePath();
-        //     }
-        //     if (!this.falling) {
-        //         ctx.beginPath();
-        //         ctx.fillStyle = "black";
-        //         ctx.arc(
-        //             x + (width / 3) * !backward - (width / 3) * backward,
-        //             y,
-        //             (width / 32) * SQUARE_ROOT_2,
-        //             0, Math.PI * 2, false);
-        //         ctx.fill();
-        //         ctx.closePath();
-        //     }
+        ctx.beginPath(); // half-square
+        ctx.strokeStyle = "black";
+        ctx.arc(
+            x - (width / 4) * !backward + (width / 4) * backward,
+            y - height / 2,
+            (width / 8) * SQUARE_ROOT_2,
+            Math.PI * 1, Math.PI * 2, false);
+        ctx.stroke();
+        ctx.closePath();
 
-        //     // Cheeks left
-        //     ctx.beginPath();
-        //     ctx.fillStyle = "rgba(255, 125, 125, .5)";
-        //     ctx.arc(
-        //         x + (width / 3),
-        //         y + height / 3,
-        //         (width / 12) * SQUARE_ROOT_2,
-        //         0, Math.PI * 2, false);
-        //     ctx.fill();
-        //     ctx.closePath();
+        // Eye center
+        const pupilSize = 2;
+        const eyeSize = 4;
+        if (this.falling || this.powerMalus > 0) {
+            drawCenteredRound(ctx, x, y, eyeSize, null, "black", 1);
+        }
+        if (!this.falling) {
+            drawCenteredRound(ctx, x, y, pupilSize, "black", null);
+        }
 
-        //     // Cheeks right
-        //     ctx.beginPath();
-        //     ctx.fillStyle = "rgba(255, 125, 125, .5)";
-        //     ctx.arc(
-        //         x - (width / 3),
-        //         y + height / 3,
-        //         (width / 12) * SQUARE_ROOT_2,
-        //         0, Math.PI * 2, false);
-        //     ctx.fill();
-        //     ctx.closePath();
+        // Eye right
+        shift = - (width / 3) * backwarder;
+        if (this.falling || this.powerMalus > 0) {
+            drawCenteredRound(ctx, x + shift, y, eyeSize, null, "black", 1);
+        }
+        if (!this.falling) {
+            drawCenteredRound(ctx, x + shift, y, pupilSize, "black", null);
+        }
+
+        // Cheeks
+        drawCenteredRound(ctx, x + (width / 3), y + (height / 3), (width / 12), "rgba(255, 125, 125, .5)");
+        drawCenteredRound(ctx, x - (width / 3), y + (height / 3), (width / 12), "rgba(255, 125, 125, .5)");
     }
 };
-
-class Params {
-    constructor() {
-        // remove
-    }
-}
 
 class Game {
     constructor(canvas) { // @TODO declare everything in constructor, THEN initialize
@@ -349,7 +284,7 @@ class Game {
         let factor = canvas.height / REFERENCE_HEIGHT;
         this.ctx.scale(factor, factor);
 
-        this.params = new Params();
+        // this.params = new Params();
 
         this.score = null;
         this.best = null;
@@ -568,7 +503,7 @@ class Game {
         if (CTRL_spacePressed && !this.mainCharacter.boosting) {
             this.mainCharacter.boosting = true;
             this.mainCharacter.boost = BOOST
-            if (this.mainCharacter.recovering){
+            if (this.mainCharacter.recovering) {
                 this.mainCharacter.boost -= this.mainCharacter.powerMalus;
             }
             const pitch = 80; // @TODO Math.random(); ?
@@ -656,8 +591,7 @@ class Game {
             this.mainCharacter.boost -= 1;
         }
         if (this.mainCharacter.falling > 0) {
-            this.mainCharacter.falling -= 1; // recover from the fall
-
+            this.mainCharacter.falling -= 1;
             if (this.mainCharacter.falling == 0) { this.mainCharacter.recovering = 2 * SHMECOND; }
         }
         if (this.mainCharacter.recovering > 0) {
@@ -675,7 +609,7 @@ class Game {
         if (this.collisions()) {
             // -- Immminent death
             zzfx(...[2, , 416, , .01, .17, 4, .23, , , , , , .5, , .4, .02, .63, .02]); // Falling (Hit 183)
-            this.mainCharacter.powerMalus += 1;
+            this.mainCharacter.powerMalus += 2;
             if (this.mainCharacter.recovering) {
                 this.mainCharacter.falling = SHMECOND * 4; // Death
             }
@@ -699,7 +633,7 @@ class Game {
         }
         this.mainCharacter.draw(this.ctx, this.step);
         for (let asteroid of this.asteroids) {
-            asteroid.draw(this.ctx, this.params.FACTOR, this.step);
+            asteroid.draw(this.ctx, this.step);
         }
         // for (let asteroid of this.asteroidCorpses) {
         //     asteroid.draw(this.ctx, this.step);
@@ -872,8 +806,4 @@ function main() {
 main();
 
 
-// @TODO handle control : spaceWasReleased?
-// @TODO factorize drawSquare(...)
-// @TODO factorize drawArc(...)
-// @TODO movement with correct factor
 // @TODO vertical delays are random
