@@ -23,13 +23,18 @@ zzfx =       // play sound
                                     getChannelData(0).set(k); b = zzfxX.createBufferSource(); b.buffer = p; b.connect(zzfxX.destination
                                     ); b.start(); return b
     }; zzfxX = new (window.AudioContext || webkitAudioContext) // audio context
-// End
+
+// Charming Rabbit
+// MIT License - Copyright 2021 Antoine Dricot
+// A dumb and charming game.
 
 // Graphics
+const REFERENCE_HEIGHT = 627; // innerHeight for dev
+const REFERENCE_WIDTH = 391; // innerWidth for dev
+
 const SHMECOND = 60; // around 1 seconds
 const PAUSE_TIME = 60; // around 1 seconds
 const FADE_SPEED = 90; // around 1.5 seconds
-const REFERENCE_HEIGHT = 627; // innerHeight for dev
 const NUM_STARS = 20; // enough
 const RAINBOW = [
     "rgba(255,   0,   0, 1)", // "red"?
@@ -45,18 +50,15 @@ const SQUARE_ROOT_2 = 1.41421356237;
 const DEGREES = Math.PI / 180;
 
 // Engine
-// @TODO normalize the values
-// @TODO move to a class Engine, member of Game
 const TURNING_DELAY = 350; // unit = steps (1 step = 1/60 second)
-const FACTOR = window.innerHeight / REFERENCE_HEIGHT; // @TODO remove
 const GAME_STATE = {
     WAIT: 0,
     PLAY: 1
 }
 const SIZES = {
-    RABBIT: 30 * FACTOR,
-    ASTEROID_MIN: 10 * FACTOR,
-    ASTEROID_MAX: 50 * FACTOR
+    RABBIT: 30,
+    ASTEROID_MIN: 10,
+    ASTEROID_MAX: 50
 }
 
 class Asteroids {
@@ -169,8 +171,6 @@ class Character {
         let y = this.position[1] + this.waitShift;
 
         // Tail
-        // ctx.lineWidth = 1;
-        // @TODO width == boost
         for (let i = 0; i < this.fifouTail.length; i++) {
             ctx.beginPath();
             let color = RAINBOW[this.fifouTail[i][2]];
@@ -324,15 +324,12 @@ class Character {
 };
 
 class Params {
-    constructor(factor = 1) {
+    constructor() {
         // @TODO: Math.round() the values?
-        console.debug(factor);
-        this.FACTOR = Math.round(factor);
-        this.SHGRAVITY = 6 * factor;
-        this.BOOST = 16 * factor; // @TODO do not factor BOOST, factor only the downward vertical steps
-        this.CRUISE_SPEED = 3 * factor;
-        this.VERTICAL_DELAY = 200 * factor;
-        console.debug(this);
+        this.SHGRAVITY = 6;
+        this.BOOST = 16; // @TODO do not factor BOOST, factor only the downward vertical steps
+        this.CRUISE_SPEED = 3;
+        this.VERTICAL_DELAY = 200;
     }
 }
 
@@ -340,9 +337,10 @@ class Game {
     constructor(canvas) { // @TODO declare everything in constructor, THEN initialize
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
-
         let factor = canvas.height / REFERENCE_HEIGHT;
-        this.params = new Params(factor);
+        this.ctx.scale(1,1);
+
+        this.params = new Params();
 
         this.score = null;
         this.best = null;
@@ -364,7 +362,7 @@ class Game {
         this.generateStars();
 
         this.mainCharacter = new Character(
-            [this.canvas.width / 2, this.canvas.height / 2],
+            [REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 2],
             this.params.CRUISE_SPEED
         );
 
@@ -394,17 +392,17 @@ class Game {
 
         this.handle_charming_float();
 
-        if (this.state == GAME_STATE.WAIT && this.step > PAUSE_TIME) {
-            if (CTRL_spacePressed) {
-                this.CTRL_spaceWasPressed = true;
-            }
-            else if (this.CTRL_spaceWasPressed && !CTRL_spacePressed) {
-                this.switchGameState(GAME_STATE.PLAY);
-            }
-        }
-        else if (this.state == GAME_STATE.PLAY) {
-            this.engine();
-        }
+        // if (this.state == GAME_STATE.WAIT && this.step > PAUSE_TIME) {
+        //     if (CTRL_spacePressed) {
+        //         this.CTRL_spaceWasPressed = true;
+        //     }
+        //     else if (this.CTRL_spaceWasPressed && !CTRL_spacePressed) {
+        //         this.switchGameState(GAME_STATE.PLAY);
+        //     }
+        // }
+        // else if (this.state == GAME_STATE.PLAY) {
+        //     this.engine();
+        // }
         this.draw();
         requestAnimationFrame(() => this.run());
     };
@@ -495,11 +493,11 @@ class Game {
 
             for (let i = 0; i < waveLength; i++) {
                 let color = RAINBOW[this.waveNum % RAINBOW.length];
-                let x = Math.floor(Math.random() * (this.canvas.width / 2) + (this.canvas.width / 4));
+                let x = Math.floor(Math.random() * (REFERENCE_WIDTH / 2) + (REFERENCE_WIDTH / 4));
                 let y = 0 - i * this.params.VERTICAL_DELAY; // @TODO add randomness to delay
                 let asteroid = new Asteroids([x, y], color);
                 let horizontalDirection = Math.floor(Math.random() * this.params.SHGRAVITY);
-                if (x > this.canvas.width / 2) {
+                if (x > REFERENCE_WIDTH / 2) {
                     horizontalDirection = - horizontalDirection;
                 }
                 asteroid.direction[0] = horizontalDirection; // @TODO random + random position also
@@ -545,8 +543,8 @@ class Game {
 
             // -- Badaboum
             if (
-                (asteroid.position[1] > this.canvas.height) ||
-                (asteroid.position[0] > this.canvas.width) ||
+                (asteroid.position[1] > REFERENCE_HEIGHT) ||
+                (asteroid.position[0] > REFERENCE_WIDTH) ||
                 (asteroid.position[0] < 0)
             ) {
                 // console.debug("Badaboum.");
@@ -617,7 +615,7 @@ class Game {
         // -- Horizontal
         newPosition = this.mainCharacter.position[0] + this.mainCharacter.direction[0];
         if (
-            (newPosition - this.mainCharacter.width / 4 > this.canvas.width) ||
+            (newPosition - this.mainCharacter.width / 4 > REFERENCE_WIDTH) ||
             (newPosition + this.mainCharacter.width / 4 < 0)
         ) {
             // -- Auto turn
@@ -628,7 +626,7 @@ class Game {
 
             // -- Passthrough: removed because not as fun as expected
             // if (this.mainCharacter.direction[0] > 0) { this.mainCharacter.position[0] = 0; }
-            // else { this.mainCharacter.position[0] = this.canvas.width; }
+            // else { this.mainCharacter.position[0] = REFERENCE_WIDTH; }
         }
         else {
             this.mainCharacter.position[0] = newPosition
@@ -636,7 +634,7 @@ class Game {
 
         // -- Vertical
         newPosition = this.mainCharacter.position[1] + this.mainCharacter.direction[1] - this.mainCharacter.boost;
-        if (newPosition - this.mainCharacter.height > this.canvas.height /*this.mainCharacter.height/2*/) {
+        if (newPosition - this.mainCharacter.height > REFERENCE_HEIGHT /*this.mainCharacter.height/2*/) {
             // console.debug("Death.");
             zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Death (Powerup 134 - Mutation 4)
             this.initialize();
@@ -663,24 +661,24 @@ class Game {
         this.ctx.clearRect(0, 0, this.ctx.canvas.clientWidth, this.ctx.canvas.clientHeight);
         this.drawBackground();
 
-        if (this.state == GAME_STATE.WAIT) {
-            this.drawTheRainbow();
-        }
+        // if (this.state == GAME_STATE.WAIT) {
+        //     this.drawTheRainbow();
+        // }
 
-        this.mainCharacter.draw(this.ctx, this.step);
+        // this.mainCharacter.draw(this.ctx, this.step);
 
-        for (let asteroid of this.asteroids) {
-            asteroid.draw(this.ctx, this.params.FACTOR, this.step);
-        }
-        for (let asteroid of this.asteroidCorpses) {
-            asteroid.draw(this.ctx, this.step);
-        }
+        // for (let asteroid of this.asteroids) {
+        //     asteroid.draw(this.ctx, this.params.FACTOR, this.step);
+        // }
+        // for (let asteroid of this.asteroidCorpses) {
+        //     asteroid.draw(this.ctx, this.step);
+        // }
 
-        this.drawScore();
+        // this.drawScore();
 
-        if (this.state == GAME_STATE.WAIT) {
-            this.drawInstructions();
-        }
+        // if (this.state == GAME_STATE.WAIT) {
+        //     this.drawInstructions();
+        // }
     }
 
     drawInstructions() {
@@ -689,8 +687,8 @@ class Game {
         this.ctx.textAlign = "center";
         let fontSize = 26 * this.params.FACTOR;
         this.ctx.font = "bolder " + String(fontSize) + "px Arial";
-        this.ctx.fillText("TAP SPACE &", this.canvas.width / 2, 3 * this.canvas.height / 4);
-        this.ctx.fillText("DO NOT FALL", this.canvas.width / 2, 3 * this.canvas.height / 4 + fontSize * 1.3);
+        this.ctx.fillText("TAP SPACE &", REFERENCE_WIDTH / 2, 3 * REFERENCE_HEIGHT / 4);
+        this.ctx.fillText("DO NOT FALL", REFERENCE_WIDTH / 2, 3 * REFERENCE_HEIGHT / 4 + fontSize * 1.3);
         this.ctx.closePath();
     }
 
@@ -704,26 +702,26 @@ class Game {
         this.ctx.textAlign = "center";
         let fontSize = 60 * this.params.FACTOR;
         this.ctx.font = "60px Helvetica";
-        this.ctx.fillText(this.score, this.canvas.width / 2, this.canvas.height / 4 - 10);
+        this.ctx.fillText(this.score, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 - 10);
         this.ctx.closePath();
 
         if (this.state == GAME_STATE.WAIT) {
             const size = 140;
 
             this.ctx.font = "20px Helvetica";
-            this.ctx.fillText("SCORE", this.canvas.width / 2, this.canvas.height / 4 - size / 2);
+            this.ctx.fillText("SCORE", REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 - size / 2);
 
             if (this.best !== null) {
                 this.ctx.font = "14px Arial";
                 let message = "BEST: " + this.best;
-                this.ctx.fillText(message, this.canvas.width / 2, this.canvas.height / 4 - size / 2 + 90);
+                this.ctx.fillText(message, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 - size / 2 + 90);
             }
 
             this.ctx.beginPath();
             this.ctx.strokeStyle = "white";
             this.ctx.rect(
-                this.canvas.width / 2 - size / 2,
-                this.canvas.height / 4 - 3 * size / 4,
+                REFERENCE_WIDTH / 2 - size / 2,
+                REFERENCE_HEIGHT / 4 - 3 * size / 4,
                 size,
                 size
             );
@@ -752,7 +750,7 @@ class Game {
 
         this.ctx.beginPath();
         this.ctx.fillStyle = "rgba(0, 0, " + String(intensity * 40 + waver * 5) + ", 1)";
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillRect(0, 0, REFERENCE_WIDTH, REFERENCE_HEIGHT);
         this.ctx.closePath();
 
         // Stars
@@ -764,8 +762,8 @@ class Game {
                 this.ctx.lineWidth = 0;
                 this.ctx.fillStyle = color;//"white";
                 this.ctx.arc(
-                    star[0] * this.canvas.width,
-                    (star[1] * this.canvas.height + this.step) % this.canvas.height,
+                    star[0] * REFERENCE_WIDTH,
+                    (star[1] * REFERENCE_HEIGHT + this.step) % REFERENCE_HEIGHT,
                     1 * SQUARE_ROOT_2,
                     0, Math.PI * 2, false);
                 this.ctx.fill();
@@ -777,22 +775,22 @@ class Game {
 
     drawTheRainbow() {
         this.ctx.beginPath();
-        this.ctx.lineWidth = 1;
+        this.ctx.lineWidth = 2;
         this.ctx.strokeStyle = "white";
-        this.ctx.moveTo(0, this.canvas.height * .7);
-        this.ctx.lineTo(this.canvas.width / 2, this.canvas.height / 2);
+        this.ctx.moveTo(0, REFERENCE_HEIGHT * .7);
+        this.ctx.lineTo(REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 2);
         this.ctx.stroke();
         this.ctx.closePath();
 
         for (let i = 0; i < RAINBOW.length; i++) {
-            const girth = 10;
+            const girth = 10 * this.params.FACTOR;
             this.ctx.beginPath();
             this.ctx.lineWidth = girth;
             this.ctx.strokeStyle = RAINBOW[i];
-            this.ctx.moveTo(this.canvas.width / 2, this.canvas.height / 2);
+            this.ctx.moveTo(REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 2);
             this.ctx.lineTo(
-                this.canvas.width + girth,
-                - RAINBOW.length * girth / 2 + this.canvas.height * .7 + i * girth);
+                REFERENCE_WIDTH + girth,
+                - RAINBOW.length * girth / 2 + REFERENCE_HEIGHT * .7 + i * girth);
             this.ctx.stroke();
             this.ctx.closePath();
         }
@@ -833,14 +831,9 @@ function touchUpDownHandler(e) {
 function main() {
     // -- Canvas
     let mainCanvas = document.createElement("canvas");
-
-    let referenceHeight = window.innerHeight;
-    // let referenceWidth = window.innerWidth;
-    // console.debug(referenceHeight);
-    // console.debug(referenceWidth);
-
-    mainCanvas.height = referenceHeight;
-    mainCanvas.width = referenceHeight * 10 / 16;
+    let actualHeight = window.innerHeight;
+    mainCanvas.height = actualHeight;
+    mainCanvas.width = actualHeight * 10 / 16;
     document.body.appendChild(mainCanvas);
 
     // -- Control
@@ -857,6 +850,9 @@ function main() {
 
 main();
 
+
 // @TODO handle control : spaceWasReleased?
 // @TODO factorize drawSquare(...)
 // @TODO factorize drawArc(...)
+// @TODO movement with correct factor
+// @TODO vertical delays are random
