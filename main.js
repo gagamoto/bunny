@@ -61,6 +61,22 @@ const SIZES = {
     ASTEROID_MAX: 50
 }
 
+function drawCenteredRect(ctx = null, x = 0, y = 0, w = 0, h = 0, fillStyle = "white", strokeStyle = null, strokeWidth = null) {
+
+}
+
+function drawCenteredRound(ctx = null, x = 0, y = 0, radius = 0, fillStyle = "white", strokeStyle = null, strokeWidth = null) {
+    ctx.fillStyle = fillStyle;
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = strokeWidth;
+
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2, false);
+    if (fillStyle) { ctx.fill(); }
+    if (strokeStyle) { ctx.stroke(); }
+    ctx.closePath();
+}
+
 class Asteroids {
     constructor(position, color = "white") {
         this.position = position;
@@ -338,7 +354,7 @@ class Game {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         let factor = canvas.height / REFERENCE_HEIGHT;
-        this.ctx.scale(1,1);
+        this.ctx.scale(factor, factor);
 
         this.params = new Params();
 
@@ -736,17 +752,18 @@ class Game {
             fadeSpeed = PAUSE_TIME;
         }
 
-        let waver = 0;
         let intensity = 1;
-        if (this.step < fadeSpeed) {
-            intensity = this.step % fadeSpeed / fadeSpeed; // Fade in blue
-        }
+        let waver = 0;
 
-        if (this.state == GAME_STATE.PLAY && intensity == 1) { waver = Math.sin(this.step / 64); }
+        // if (this.step < fadeSpeed) {
+        //     intensity = this.step % fadeSpeed / fadeSpeed; // Fade in blue
+        // }
 
-        if (this.state == GAME_STATE.WAIT) {
-            intensity = 1 - intensity;
-        }
+        // if (this.state == GAME_STATE.PLAY && intensity == 1) { waver = Math.sin(this.step / 64); }
+
+        // if (this.state == GAME_STATE.WAIT) {
+        //     intensity = 1 - intensity;
+        // }
 
         this.ctx.beginPath();
         this.ctx.fillStyle = "rgba(0, 0, " + String(intensity * 40 + waver * 5) + ", 1)";
@@ -755,20 +772,15 @@ class Game {
 
         // Stars
         const color = "rgba(255, 255, 255, " + String(intensity) + ")";
-        if (this.state == GAME_STATE.PLAY) {
-            let index = 0;
+        if (this.state == GAME_STATE.PLAY || true) {
             for (let star of this.stars) {
-                this.ctx.beginPath();
-                this.ctx.lineWidth = 0;
-                this.ctx.fillStyle = color;//"white";
-                this.ctx.arc(
+                drawCenteredRound(
+                    this.ctx,
                     star[0] * REFERENCE_WIDTH,
                     (star[1] * REFERENCE_HEIGHT + this.step) % REFERENCE_HEIGHT,
-                    1 * SQUARE_ROOT_2,
-                    0, Math.PI * 2, false);
-                this.ctx.fill();
-                this.ctx.closePath();
-                index += 1;
+                    2,
+                    color
+                );
             }
         }
     }
