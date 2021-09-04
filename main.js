@@ -483,6 +483,32 @@ class Game {
         this.currentAsteroidsNum -= 1;
     }
 
+    controlMainCharacter() {
+        if (this.mainCharacter.falling) { return; }
+
+        // -- Turn
+        if (CTRL_spacePressed && !this.mainCharacter.turning) {
+            if (Date.now() - CTRL_spacePressedTime > TURNING_DELAY) {
+                this.mainCharacter.turn();
+            }
+        }
+
+        // // -- Boost
+        // if (CTRL_spacePressed && !this.boosting) {
+        //     // SOUNDS.BOOST
+        //     this.mainCharacter.boost = this.params.BOOST - this.mainCharacter.powerMalus;
+        //     this.boosting = true;
+        //     let pitch = 80 + 80 * Math.random();
+        //     zzfx(...[1.27, , pitch, .02, .07, .09, 1, 1.23, 2.1, .8, , , , , , , .01, .97, .01, .18]); // Shoot 67
+        // }
+        // if (this.mainCharacter.position[1] < 0) {
+        //     this.mainCharacter.boost = 0;
+        // }
+        // if (!CTRL_spacePressed) {
+        //     this.boosting = false;
+        //     this.turning = false;
+        // }
+    }
     moveMainCharacter() {
         // -- Acceleration
         if (this.mainCharacter.direction[1] < SHGRAVITY) {
@@ -509,7 +535,7 @@ class Game {
         let newY = this.mainCharacter.position[1] + this.mainCharacter.direction[1] - this.mainCharacter.boost;
         this.mainCharacter.position[1] = newY
 
-        if (newY - yMargin > REFERENCE_HEIGHT ) {
+        if (newY - yMargin > REFERENCE_HEIGHT) {
             // console.debug("Death.");
             zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Death (Powerup 134 - Mutation 4)
             this.initialize();
@@ -601,40 +627,14 @@ class Game {
                     }
                 }
         */
-        /*
-                // Control
-                if (!this.mainCharacter.falling) {
-                    // -- U-turn
-                    if (CTRL_spacePressed && !this.turning) {
-                        if (Date.now() - CTRL_spacePressedTime > TURNING_DELAY) {
-                            this.turning = true;
-                            this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
-                            zzfx(...[1.52, , 201, .03, .03, .01, 3, 1.45, 36, , , , , .1, 4.7, , .04, , , .03]); // Turn (Blip 210)
-                        }
-                    }
-        
-                    // -- Boost
-                    if (CTRL_spacePressed && !this.boosting) {
-                        // SOUNDS.BOOST
-                        this.mainCharacter.boost = this.params.BOOST - this.mainCharacter.powerMalus;
-                        this.boosting = true;
-                        let pitch = 80 + 80 * Math.random();
-                        zzfx(...[1.27, , pitch, .02, .07, .09, 1, 1.23, 2.1, .8, , , , , , , .01, .97, .01, .18]); // Shoot 67
-                    }
-                    if (this.mainCharacter.position[1] < 0) {
-                        this.mainCharacter.boost = 0;
-                    }
-                    if (!CTRL_spacePressed) {
-                        this.boosting = false;
-                        this.turning = false;
-                    }
-                }
-        */
+        // Control
+        this.controlMainCharacter();
+
         // Movements
+        if (this.mainCharacter.boost > 0) {
+            this.mainCharacter.boost -= 1;
+        }
         /*
-                if (this.mainCharacter.boost > 0) {
-                    this.mainCharacter.boost -= Math.min(this.params.FACTOR, this.mainCharacter.boost);
-                }
                 if (this.mainCharacter.falling > 0) {
                     this.mainCharacter.falling -= this.params.FACTOR;
                 }
