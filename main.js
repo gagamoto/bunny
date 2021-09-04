@@ -53,7 +53,7 @@ const DEGREES = Math.PI / 180;
 // Engine
 const SHGRAVITY = 6;
 const VERTICAL_SHTEP = 1;
-const VERTICAL_DELAY = 100;
+const VERTICAL_DELAY = 150;
 const BOOST = 16;
 const CRUISE_SPEED = 3;
 const TURNING_DELAY = 350; // unit = steps (1 step = 1/60 second)
@@ -62,7 +62,7 @@ const GAME_STATE = {
     PLAY: 1
 };
 const SIZES = {
-    RABBIT: 30,
+    RABBIT: 40,
     ASTEROID_MIN: 30,
     ASTEROID_MAX: 80
 };
@@ -206,29 +206,9 @@ class Character {
         shift = (width / 4) * backwarder;
         drawCenteredRound(ctx, x + shift, y - (height / 2), (width / 8), "white", null);
 
-        ctx.beginPath(); // half-square
-        ctx.strokeStyle = "black";
-        ctx.arc(
-            x + shift,
-            y - height / 2,
-            (width / 8) * SQUARE_ROOT_2,
-            Math.PI * 1, Math.PI * 2, false);
-        ctx.stroke();
-        ctx.closePath();
-
         // Ear center
         shift = (width / 4) * backwarder;
         drawCenteredRound(ctx, x - shift, y - (height / 2), (width / 8), "white", null);
-
-        ctx.beginPath(); // half-square
-        ctx.strokeStyle = "black";
-        ctx.arc(
-            x - (width / 4) * !backward + (width / 4) * backward,
-            y - height / 2,
-            (width / 8) * SQUARE_ROOT_2,
-            Math.PI * 1, Math.PI * 2, false);
-        ctx.stroke();
-        ctx.closePath();
 
         // Eye center
         const pupilSize = 2;
