@@ -23,9 +23,19 @@ zzfx =       // play sound
                                     getChannelData(0).set(k); b = zzfxX.createBufferSource(); b.buffer = p; b.connect(zzfxX.destination
                                     ); b.start(); return b
     }; zzfxX = new (window.AudioContext || webkitAudioContext) // audio context
-// End
+
+// Charming Rabbit
+// MIT License - Copyright 2021 Antoine Dricot
+// A dumb and charming game.
 
 // Graphics
+const REFERENCE_HEIGHT = 627; // innerHeight for dev
+const REFERENCE_WIDTH = 391; // innerWidth for dev
+
+const SHMECOND = 60; // around 1 seconds
+const PAUSE_TIME = 60; // around 1 seconds
+const FADE_SPEED = 90; // around 1.5 seconds
+const NUM_STARS = 20; // enough
 const RAINBOW = [
     "rgba(255,   0,   0, 1)", // "red"?
     "rgba(255, 125,   0, 1)", // "orange"?
@@ -40,21 +50,45 @@ const SQUARE_ROOT_2 = 1.41421356237;
 const DEGREES = Math.PI / 180;
 
 // Engine
-// @TODO normalize the values
-// @TODO move to a class Engine, member of Game
-const REFERENCE_HEIGHT = 627; // innerHeight for dev
-const FACTOR = window.innerHeight / REFERENCE_HEIGHT;
-
-const SHGRAVITY = 6*FACTOR;
-const CRUISE_SPEED = 3*FACTOR;
-const VERTICAL_DELAY = 200;
+const SHGRAVITY = 6;
+const VERTICAL_SHTEP = 1;
+const VERTICAL_DELAY = 100;
+const BOOST = 16;
+const CRUISE_SPEED = 3;
+const TURNING_DELAY = 350; // unit = steps (1 step = 1/60 second)
+const GAME_STATE = {
+    WAIT: 0,
+    PLAY: 1
+};
 const SIZES = {
-    RABBIT: 30*FACTOR,
-    ASTEROID_MIN: 10*FACTOR,
-    ASTEROID_MAX: 50*FACTOR
+    RABBIT: 30,
+    ASTEROID_MIN: 10,
+    ASTEROID_MAX: 50
+};
+
+function drawCenteredRect(ctx = null, x = 0, y = 0, w = 0, h = 0, fillStyle = "white", strokeStyle = null, strokeWidth = 2) {
+    ctx.fillStyle = fillStyle;
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = strokeWidth;
+
+    ctx.beginPath();
+    ctx.rect(x - w / 2, y - h / 2, w, h);
+    if (strokeStyle) { ctx.stroke(); }
+    if (fillStyle) { ctx.fill(); }
+    ctx.closePath();
 }
 
-const TURNING_DELAY = 350; // unit = steps (1 step = 1/60 second)
+function drawCenteredRound(ctx = null, x = 0, y = 0, radius = 0, fillStyle = "white", strokeStyle = null, strokeWidth = 2) {
+    ctx.fillStyle = fillStyle;
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = strokeWidth;
+
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2, false);
+    if (strokeStyle != null) { ctx.stroke(); }
+    if (fillStyle != null) { ctx.fill(); }
+    ctx.closePath();
+}
 
 class Asteroids {
     constructor(position, color = "white") {
@@ -71,63 +105,57 @@ class Asteroids {
     };
 
     draw(ctx, currentStep = 0) {
+
         ctx.lineWidth = 2;
 
         // for readability
+        const tailDelta = 4; // @TODO fix tail angle
+        const boumDelta = 4;
+
         let diameter = this.diameter;
         let x = this.position[0];
         let y = this.position[1];
 
-        // Tail
         if (this.still_alive) {
-            let delta = 4;
+            // Tail
             for (let i = 0; i < this.fifouTail.length; i++) {
-                let size = diameter - this.fifouTail.length * delta + i * delta;
-                size -= (RAINBOW.length - this.fifouTail.length); // fix: start with smaller tail
-                if (size <= 0) {
-                    size = 1;
-                }
+                let size = tailDelta; // @TODO fix
+                // let size = diameter + (i - this.fifouTail.length) * tailDelta;
+                // size -= (RAINBOW.length - this.fifouTail.length); // fix: start with smaller tail
+                // if (size <= 0) {
+                //     size = 2 * factor;
+                // }
                 ctx.beginPath();
-                ctx.fillStyle = RAINBOW[i];
-                ctx.strokeStyle = "white"; // this.color;
+                // ctx.fillStyle = RAINBOW[i];
+                ctx.strokeStyle = RAINBOW[i];
                 ctx.arc(
                     this.fifouTail[i][0],
                     this.fifouTail[i][1],
                     (size / 2) * SQUARE_ROOT_2,
                     0, Math.PI * 2, false);
-                ctx.fill();
-                // ctx.stroke();
+                // ctx.fill();
+                ctx.stroke();
                 ctx.closePath();
 
             }
 
-            ctx.beginPath();
-            ctx.fillStyle = "black"; // this.color;
-            ctx.strokeStyle = "white"; // this.color;
-            ctx.arc(
-                x,
-                y,
-                (diameter / 2) * SQUARE_ROOT_2,
-                0, Math.PI * 2, false);
-            ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
+            // Core
+            drawCenteredRound(ctx, x, y, diameter / 2, "black", "white")
         }
         else {
-            let delta = 4;
-            diameter = 10 + (currentStep - this.funeralStep) * delta;
+            diameter = 10; // + (currentStep - this.funeralStep) * boumDelta; @TODO fix
             if (diameter > 150) {
                 return;
             }
             ctx.beginPath();
-            // ctx.fillStyle = "pink"; // this.color;
+            ctx.fillStyle = this.color;
             ctx.strokeStyle = this.color;
             ctx.arc(
                 x,
                 y,
                 (diameter / 2) * SQUARE_ROOT_2,
                 0, Math.PI * 2, false);
-            // ctx.fill();
+            ctx.fill();
             ctx.stroke();
             ctx.closePath();
         }
@@ -135,264 +163,180 @@ class Asteroids {
 }
 
 class Character {
-    constructor(position, direction) {
+    constructor(position, speed) {
         this.position = position;
-        this.direction = [-CRUISE_SPEED, 0];
+        this.direction = [-speed, 0];
 
         this.boost = 0;
         this.boosting = false;
         this.turning = false;
+        this.recovering = 0;
         this.falling = 0;
-        this.powerMalus = 0;
+        this.powerMalus = 0; // a kind of damage
 
-        this.width = SIZES.RABBIT; // @TODO remove
-        this.height = SIZES.RABBIT; // @TODO remove
+        this.width = SIZES.RABBIT;
+        this.height = SIZES.RABBIT;
         this.fifouTail = []; // drawing only
         this.waitShift = 0;
     };
 
-    draw(ctx, currentStep = 0) {
-        ctx.lineWidth = 2;
+    turn() {
+        zzfx(...[1.52, , 201, .03, .03, .01, 3, 1.45, 36, , , , , .1, 4.7, , .04, , , .03]); // Turn (Blip 210)
+        this.turning = true;
+        this.direction[0] = -this.direction[0];
+    }
 
+    draw(ctx, currentStep = 0) {
         // Reference square
         let backward = (this.direction[0] < 0);
+        let backwarder = - 1 * !backward + 1 * backward;
+        let shift = 0;
         let width = this.width;
         let height = this.height;
         let x = this.position[0];
         let y = this.position[1] + this.waitShift;
 
         // Tail
-        // ctx.lineWidth = 1;
-        // @TODO width == boost
+        const minSize = 4;
+        const maxSize = 12;
+        const tailCenter = [
+            - width / 2 + width * backward,
+            height / 6
+        ];
+
         for (let i = 0; i < this.fifouTail.length; i++) {
-            ctx.beginPath();
             let color = RAINBOW[this.fifouTail[i][2]];
-            let size = 10 - i - (RAINBOW.length - this.fifouTail.length); // fix: start with smaller tail
-            if (this.powerMalus > 0) {
-                size = 3;
+            let radius = maxSize - i - (RAINBOW.length - this.fifouTail.length); // fix: start with smaller tail
+            if (radius < minSize) {
+                radius = minSize;
             }
-            // ctx.fillStyle = "black";
-            ctx.strokeStyle = color;
-            ctx.arc(
-                this.fifouTail[i][0] - width / 2 + width * backward,
-                this.fifouTail[i][1] + height / 6,
-                size * SQUARE_ROOT_2,
-                0, Math.PI * 2, false);
-            // ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
+            if (this.recovering > 0) {
+                radius = minSize;
+                color = "white";
+            }
+            drawCenteredRound(ctx, this.fifouTail[i][0] + tailCenter[0], this.fifouTail[i][1] + tailCenter[1], radius, null, color);
         }
 
-        ctx.lineWidth = 2;
-        // Ear back
-        ctx.beginPath();
-        ctx.fillStyle = "white";
-        ctx.strokeStyle = "black";
-        ctx.arc(
-            x + (width / 4) * !backward - (width / 4) * backward, // @TODO factorize the shift
-            y - height / 2,
-            (width / 8) * SQUARE_ROOT_2,
-            0, Math.PI * 2, false);
-        ctx.fill();
-        ctx.stroke();
-        ctx.closePath();
-
         // Body
-        let shift = 0;
+        shift = 0;
         if (this.falling) {
             shift = Math.sin(currentStep) * 2;
         }
-        ctx.beginPath();
-        ctx.fillStyle = "white";
+        drawCenteredRect(ctx, x + shift, y, width, height, "white", "black")
+
+        // Ear back
+        shift = (width / 4) * backwarder;
+        drawCenteredRound(ctx, x + shift, y - (height / 2), (width / 8), "white", null);
+
+        ctx.beginPath(); // half-square
         ctx.strokeStyle = "black";
-        ctx.rect(
-            x - width / 2 + shift,
-            y - width / 2,
-            width,
-            width
-        );
-        ctx.fill();
+        ctx.arc(
+            x + shift,
+            y - height / 2,
+            (width / 8) * SQUARE_ROOT_2,
+            Math.PI * 1, Math.PI * 2, false);
         ctx.stroke();
         ctx.closePath();
 
-        // Ear front
-        ctx.beginPath();
-        ctx.fillStyle = "white";
-        // ctx.strokeStyle = "black";
-        ctx.arc(
-            x - (width / 4) * !backward + (width / 4) * backward,
-            y - height / 2,
-            (width / 8) * SQUARE_ROOT_2,
-            0, Math.PI * 2, false);
-        ctx.fill();
-        // ctx.stroke();
-        ctx.closePath();
+        // Ear center
+        shift = (width / 4) * backwarder;
+        drawCenteredRound(ctx, x - shift, y - (height / 2), (width / 8), "white", null);
 
-        ctx.beginPath();
-        // ctx.fillStyle = "white";
+        ctx.beginPath(); // half-square
         ctx.strokeStyle = "black";
         ctx.arc(
             x - (width / 4) * !backward + (width / 4) * backward,
             y - height / 2,
             (width / 8) * SQUARE_ROOT_2,
             Math.PI * 1, Math.PI * 2, false);
-        // ctx.fill();
         ctx.stroke();
         ctx.closePath();
 
-        // Eye left
+        // Eye center
+        const pupilSize = 2;
+        const eyeSize = 4;
         if (this.falling || this.powerMalus > 0) {
-            ctx.beginPath();
-            ctx.fillStyle = "white";
-            ctx.strokeStyle = "black";
-            ctx.arc(
-                x, // + (width / 6) * backward - (width / 6) * !backward, // @TODO factorize the shift
-                y,
-                (width / 12) * SQUARE_ROOT_2,
-                0, Math.PI * 2, false);
-            // ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
+            drawCenteredRound(ctx, x, y, eyeSize, null, "black", 1);
         }
         if (!this.falling) {
-            ctx.beginPath();
-            ctx.fillStyle = "black";
-            ctx.arc(
-                x,
-                y,
-                (width / 32) * SQUARE_ROOT_2,
-                0, Math.PI * 2, false);
-            ctx.fill();
-            ctx.closePath();
+            drawCenteredRound(ctx, x, y, pupilSize, "black", null);
         }
 
         // Eye right
+        shift = - (width / 3) * backwarder;
         if (this.falling || this.powerMalus > 0) {
-            ctx.beginPath();
-            ctx.fillStyle = "white";
-            ctx.strokeStyle = "black";
-            ctx.arc(
-                x + (width / 3) * !backward - (width / 3) * backward, // @TODO factorize the shift
-                y,
-                (width / 12) * SQUARE_ROOT_2,
-                0, Math.PI * 2, false);
-            // ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
+            drawCenteredRound(ctx, x + shift, y, eyeSize, null, "black", 1);
         }
         if (!this.falling) {
-            ctx.beginPath();
-            ctx.fillStyle = "black";
-            ctx.arc(
-                x + (width / 3) * !backward - (width / 3) * backward,
-                y,
-                (width / 32) * SQUARE_ROOT_2,
-                0, Math.PI * 2, false);
-            ctx.fill();
-            ctx.closePath();
+            drawCenteredRound(ctx, x + shift, y, pupilSize, "black", null);
         }
 
-        // Cheeks left
-        ctx.beginPath();
-        ctx.fillStyle = "rgba(255, 125, 125, .5)";
-        ctx.arc(
-            x + (width / 3),
-            y + height / 3,
-            (width / 12) * SQUARE_ROOT_2,
-            0, Math.PI * 2, false);
-        ctx.fill();
-        ctx.closePath();
-
-        // Cheeks right
-        ctx.beginPath();
-        ctx.fillStyle = "rgba(255, 125, 125, .5)";
-        ctx.arc(
-            x - (width / 3),
-            y + height / 3,
-            (width / 12) * SQUARE_ROOT_2,
-            0, Math.PI * 2, false);
-        ctx.fill();
-        ctx.closePath();
+        // Cheeks
+        drawCenteredRound(ctx, x + (width / 3), y + (height / 3), (width / 12), "rgba(255, 125, 125, .5)");
+        drawCenteredRound(ctx, x - (width / 3), y + (height / 3), (width / 12), "rgba(255, 125, 125, .5)");
     }
 };
-
-const GAME_STATE = {
-    WAIT: 0,
-    PLAY: 1
-}
-
-class Params {
-    constructor(factor = 1) {
-        // @TODO: Math.round() the values?
-        console.debug(factor);
-        this.FACTOR = Math.round(factor);
-        this.SHGRAVITY = 6 * factor;
-        this.BOOST = 16 * factor;
-        console.debug(this);
-    }
-}
 
 class Game {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
-
         let factor = canvas.height / REFERENCE_HEIGHT;
-        this.params = new Params(factor);
+        this.ctx.scale(factor, factor);
+
+        // this.params = new Params();
 
         this.score = null;
         this.best = null;
 
-        this.waveNum = 0;
-        this.currentAsteroidsNum = 0;
-        this.asteroids = [];
-        this.asteroidCorpses = [];
-
+        this.mainCharacter = null;
+        this.waveNum = null;
+        this.currentAsteroidsNum = null;
+        this.asteroids = null
+        this.asteroidCorpses = null;
         this.stars = null;
-        this.reinit();
+
+        this.state = null;
+        this.step = null;
+        this.CTRL_spaceWasPressed = null;
     };
 
-    reinit() {
+    initialize() {
+        this.switchGameState(GAME_STATE.WAIT);
         this.generateStars();
 
-        this.switchGameState(GAME_STATE.WAIT);
-        this.step = null;
-        this.CTRL_spaceWasPressed = false;
-
         this.mainCharacter = new Character(
-            [this.canvas.width / 2, this.canvas.height / 2]
+            [REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 2],
+            CRUISE_SPEED
         );
 
         this.asteroids = [];
         this.asteroidCorpses = [];
         this.currentAsteroidsNum = 0;
-
         this.waveNum = 0;
-
-        console.debug(this); // @TODO debug print state method
     }
 
     generateStars() {
-        const numStars = 20;
         this.stars = [];
-
-        for (let i = 0; i < numStars; i++) {
+        for (let i = 0; i < NUM_STARS; i++) {
             this.stars.push(
                 [Math.random(), Math.random()]
             );
         }
     }
 
-    run() {
-        // @TODO handle control : spaceWasReleased?
-        this.step += 1;
-
-        // Handle charming float on waiting screen
+    handle_charming_float() {
         if (this.state == GAME_STATE.WAIT) {
             this.mainCharacter.waitShift = Math.sin(this.step / 8) * 3;
         }
+    }
 
-        if (this.state == GAME_STATE.WAIT && this.step > 60) {
+    run() {
+        this.step += 1;
+
+        this.handle_charming_float();
+
+        if (this.state == GAME_STATE.WAIT && this.step > PAUSE_TIME) {
             if (CTRL_spacePressed) {
                 this.CTRL_spaceWasPressed = true;
             }
@@ -408,27 +352,19 @@ class Game {
     };
 
     switchGameState(state) {
-        zzfx(...[1.01, , 76, .1, .06, .06, , 1.93, , 42, , , .15, , , .1, , .07, .25]); // Random 51
+        zzfx(...[1.01, , 76, .1, .06, .06, , 1.93, , 42, , , .15, , , .1, , .07, .25]); // Main screen (Random 51)
 
-        console.debug("Switch game state to:");
+        // console.debug("Switch game state to:");
         this.state = state;
-        console.debug(this.state); //DEBUG
-
+        this.step = 0; // reset in both states
         if (this.state == GAME_STATE.WAIT) {
-            console.debug("Press SPACE to play"); //DEBUG
-            if (this.score > this.best) {
-                this.best = this.score;
-            }
+            if (this.score > this.best) { this.best = this.score; }
         }
         else if (this.state == GAME_STATE.PLAY) {
-            console.debug("We are playing"); //DEBUG
-            this.step = 0;
             this.score = 0;
             this.mainCharacter.waitShift = 0;
         }
-
-        // Reset @TODO
-        this.CTRL_spaceWasPressed = false;
+        this.CTRL_spaceWasPressed = false; // fix: do not start while boosting
     }
 
     // Engine
@@ -451,6 +387,7 @@ class Game {
             }
 
             // close enough (danger zone)
+            // @TODO color the danger zone?
             let limitSquareDistance = (rabbitRadius + asteroidRadius) * (rabbitRadius + asteroidRadius);
             let squareHorizontal = horizontalDistance * horizontalDistance;
             let squareVertical = verticalDistance * verticalDistance;
@@ -465,8 +402,86 @@ class Game {
         return false;
     }
 
+    manageAsteroidWaves() {
+        // -- Clean-up
+        if (this.asteroidCorpses.length) {
+            if (
+                (this.asteroidCorpses.length > RAINBOW.length) ||
+                (this.step - this.asteroidCorpses[0].funeralStep > SHMECOND)
+            ) {
+                this.asteroidCorpses.shift; // cleaning one corpse per frame seems enough
+            }
+        }
+
+        // -- Creation
+        if (this.currentAsteroidsNum == 0) {
+            // Burry the old wave
+            this.asteroidCorpses = this.asteroidCorpses.concat(this.asteroids);
+
+            // Initialize the new wave
+            this.asteroids = [];
+            const minNumAsteroids = 4;
+            const maxNumAsteroids = RAINBOW.length;
+            let waveLength = minNumAsteroids + Math.round(Math.random() * (maxNumAsteroids - minNumAsteroids));
+
+            for (let i = 0; i < waveLength; i++) {
+                let color = RAINBOW[this.waveNum % RAINBOW.length];
+                // @TODO remove debug positions
+                // x debug for debug = i * SIZES.ASTEROID_MAX
+                let x = Math.floor(Math.random() * (REFERENCE_WIDTH / 2) + (REFERENCE_WIDTH / 4));
+                let y = -SIZES.ASTEROID_MAX - i * VERTICAL_DELAY; // @TODO add randomness to delay
+                let asteroid = new Asteroids([x, y], color);
+
+                let horizontalDirection = Math.floor(Math.random() * CRUISE_SPEED * 2);
+                if (x > REFERENCE_WIDTH / 2) {
+                    horizontalDirection = - horizontalDirection;
+                }
+                asteroid.direction[0] = horizontalDirection;
+                this.asteroids.push(asteroid);
+            }
+
+            this.currentAsteroidsNum = this.asteroids.length;
+            this.waveNum += 1;
+        }
+    }
+
+    moveAsteroids() {
+        for (let asteroid of this.asteroids) {
+            if (!asteroid.still_alive) {
+                continue;
+            }
+
+            // // -- Tail
+            // if (this.step % (tailStepSize) == 0) {
+            //     let position = Object.assign({}, asteroid.position);
+            //     asteroid.fifouTail.push(
+            //         [position[0], position[1], null]
+            //     );
+            //     if (asteroid.fifouTail.length > RAINBOW.length) {
+            //         asteroid.fifouTail.shift();
+            //     }
+            // }
+
+            if (asteroid.direction[1] < SHGRAVITY * 1.1) {
+                asteroid.direction[1] += VERTICAL_SHTEP; // asteroids will go 1.1 faster than us
+            }
+            asteroid.position[0] = asteroid.position[0] + asteroid.direction[0];
+            asteroid.position[1] = asteroid.position[1] + asteroid.direction[1];
+
+            // -- Badaboum
+            if (
+                (asteroid.position[1] > REFERENCE_HEIGHT) ||
+                (asteroid.position[0] > REFERENCE_WIDTH) ||
+                (asteroid.position[0] < 0)
+            ) {
+                this.badaboum(asteroid);
+            }
+        }
+    }
+
     badaboum(asteroid) {
         if (asteroid.position[1] > 0) {
+            zzfx(...[, , 10, .09, .03, 0, , 2.93, , -1, -989, .1, , , 10, , , , .05]); // Badaboum (Random 129)
             this.score += 1; // only on-screen crashes are scored, earlier crashes are discarded
         }
         asteroid.still_alive = false;
@@ -474,337 +489,209 @@ class Game {
         this.currentAsteroidsNum -= 1;
     }
 
-    engine() {
-        // Auto
-        const tailStepSize = 4;
+    controlMainCharacter() {
+        if (this.mainCharacter.falling) { return; }
 
-        // Asteroids waves
-        // -- Clean-up
-        if (this.asteroidCorpses.length) {
-            if (
-                (this.asteroidCorpses.length > RAINBOW.length) ||
-                (this.step - this.asteroidCorpses[0].funeralStep > 60)
-            ) {
-                this.asteroidCorpses.shift;
-            }
-        }
-
-        // -- Creation
-        if (this.currentAsteroidsNum == 0) {
-            // console.debug("Burrying.");
-            this.asteroidCorpses = this.asteroidCorpses.concat(this.asteroids);
-
-            // console.debug("Init wave.");
-            this.asteroids = [];
-            const minNumAsteroids = 5;
-            let waveLength = minNumAsteroids + Math.floor(Math.random() * (RAINBOW.length - minNumAsteroids)); // @TODO Random number + difficulty per wave
-
-            for (let i = 0; i < waveLength; i++) {
-                let color = RAINBOW[this.waveNum % RAINBOW.length];
-                let x = Math.floor(Math.random() * (this.canvas.width / 2) + (this.canvas.width / 4));
-                let y = 0 - i * VERTICAL_DELAY; // @TODO add randomness to delay + difficulty per wave
-                let asteroid = new Asteroids([x, y], color);
-                let horizontalDirection = Math.floor(Math.random() * this.params.SHGRAVITY);
-                if (x > this.canvas.width / 2) {
-                    horizontalDirection = - horizontalDirection;
-                }
-                asteroid.direction[0] = horizontalDirection; // @TODO random + random position also
-                this.asteroids.push(asteroid);
-            }
-            this.currentAsteroidsNum = this.asteroids.length;
-            this.waveNum += 1;
-        }
-
-        // -- Movements
-        for (let asteroid of this.asteroids) {
-            if (!asteroid.still_alive) {
-                continue;
-            }
-            // -- Tail
-            if (this.step % (tailStepSize) == 0) {
-                let position = Object.assign({}, asteroid.position);
-                asteroid.fifouTail.push(
-                    [position[0], position[1], null]
-                );
-                if (asteroid.fifouTail.length > RAINBOW.length) {
-                    asteroid.fifouTail.shift();
-                }
-            }
-            if (asteroid.direction[1] < this.params.SHGRAVITY * 1.1) {
-                asteroid.direction[1] += 1;
-            }
-
-            // -- Horizontal
-            let newPosition = asteroid.position[0] + asteroid.direction[0];
-            if (false) { } // placeholder for fix if needed
-            else {
-                asteroid.position[0] = newPosition
-            }
-
-            // -- Vertical
-            newPosition = asteroid.position[1] + asteroid.direction[1];
-            if (false) { } // placeholder for fix if needed
-            else {
-                asteroid.position[1] = newPosition
-            }
-
-            // -- Badaboum
-            if (
-                (asteroid.position[1] > this.canvas.height) ||
-                (asteroid.position[0] > this.canvas.width) ||
-                (asteroid.position[0] < 0)
-            ) {
-                console.debug("Badaboum."); // DEBUG
-                zzfx(...[, , 10, .09, .03, 0, , 2.93, , -1, -989, .1, , , 10, , , , .05]); // Random 129
-                this.badaboum(asteroid);
-            }
-        }
-
-
-        // Control
-        if (!this.mainCharacter.falling) {
-            // -- U-turn
-            if (CTRL_spacePressed && !this.turning) {
-                if (Date.now() - CTRL_spacePressedTime > TURNING_DELAY) {
-                    this.turning = true;
-                    this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
-                    // SOUNDS.TURN
-                    zzfx(...[1.52, , 201, .03, .03, .01, 3, 1.45, 36, , , , , .1, 4.7, , .04, , , .03]); // Blip 210
-                }
-            }
-
-            // -- Boost
-            if (CTRL_spacePressed && !this.boosting) {
-                // SOUNDS.BOOST
-                this.mainCharacter.boost = this.params.BOOST - this.mainCharacter.powerMalus;
-                this.boosting = true;
-                let pitch = 80 + 80 * Math.random();
-                zzfx(...[1.27, , pitch, .02, .07, .09, 1, 1.23, 2.1, .8, , , , , , , .01, .97, .01, .18]); // Shoot 67
-            }
-            if (this.mainCharacter.position[1] < 0) {
-                this.mainCharacter.boost = 0;
-            }
-            if (!CTRL_spacePressed) {
-                this.boosting = false;
-                this.turning = false;
-            }
-        }
-
-        // Movements
-        if (this.mainCharacter.direction[1] < this.params.SHGRAVITY) {
-            this.mainCharacter.direction[1] += this.params.FACTOR;
-        }
-        if (this.mainCharacter.boost > 0) {
-            this.mainCharacter.boost -= Math.min(this.params.FACTOR, this.mainCharacter.boost);
-            
-        }
-        if (this.mainCharacter.falling > 0) {
-            this.mainCharacter.falling -= this.params.FACTOR;
-        }
-        if (!this.mainCharacter.falling && this.mainCharacter.powerMalus > 0) {
-            this.mainCharacter.powerMalus -= .01;
-        }
-        // -- Tail
-        if (this.step % tailStepSize == 0) {
-            if (this.mainCharacter.falling) {
-                this.mainCharacter.fifouTail.shift();
-            }
-            else {
-                let tailIndex = this.step / tailStepSize % RAINBOW.length; // to retrieve color
-
-                let position = Object.assign({}, this.mainCharacter.position);
-                this.mainCharacter.fifouTail.push(
-                    [position[0], position[1], tailIndex]
-                );
-                if (this.mainCharacter.fifouTail.length > RAINBOW.length - this.mainCharacter.powerMalus) {
-                    this.mainCharacter.fifouTail.shift();
-                }
-            }
-        }
-
-        let newPosition = null;
-        // -- Horizontal
-        newPosition = this.mainCharacter.position[0] + this.mainCharacter.direction[0];
-        if (
-            (newPosition - this.mainCharacter.width / 4 > this.canvas.width) ||
-            (newPosition + this.mainCharacter.width / 4 < 0)
+        // -- Turn
+        if (CTRL_spacePressed &&
+            !this.mainCharacter.turning &&
+            (Date.now() - CTRL_spacePressedTime > TURNING_DELAY)
         ) {
-            // -- Auto turn
-            zzfx(...[1.52, , 201, .03, .03, .01, 3, 1.45, 36, , , , , .1, 4.7, , .04, , , .03]); // Blip 210
-            this.turning = true;
-            this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
+            this.mainCharacter.turn();
+        }
 
-            // -- Passthrough
-            // if (this.mainCharacter.direction[0] > 0) {
-            //     this.mainCharacter.position[0] = 0;
-            // }
-            // else {
-            //     this.mainCharacter.position[0] = this.canvas.width;
-            // }
+        // -- Boost
+        if (CTRL_spacePressed && !this.mainCharacter.boosting) {
+            this.mainCharacter.boosting = true;
+            this.mainCharacter.boost = BOOST
+            if (this.mainCharacter.recovering) {
+                this.mainCharacter.boost -= this.mainCharacter.powerMalus;
+            }
+            const pitch = 80; // @TODO randomize the pitch?
+            zzfx(...[1.27, , pitch, .02, .07, .09, 1, 1.23, 2.1, .8, , , , , , , .01, .97, .01, .18]); // Shoot 67
+        }
+
+        if (this.mainCharacter.position[1] < 0) {
+            this.mainCharacter.boost = 0; // Icarus lock
+        }
+
+        if (!CTRL_spacePressed) {
+            this.mainCharacter.boosting = false;
+            this.mainCharacter.turning = false;
+        }
+    }
+
+    tailMainCharacter() {
+        const tailStepSize = 4;
+        if (this.step % tailStepSize != 0) { return; }
+
+        if (this.mainCharacter.falling) {
+            this.mainCharacter.fifouTail.shift();
         }
         else {
-            this.mainCharacter.position[0] = newPosition
+            let tailIndex = this.step / tailStepSize % RAINBOW.length; // color index
+
+            let position = Object.assign({}, this.mainCharacter.position); // hard copy
+            this.mainCharacter.fifouTail.push(
+                [position[0], position[1], tailIndex]
+            );
+
+            let length = RAINBOW.length - this.mainCharacter.powerMalus;
+            if (this.mainCharacter.recovering) {
+                length = 2;
+            }
+            if (this.mainCharacter.fifouTail.length > length) {
+                this.mainCharacter.fifouTail.shift();
+            }
+        }
+    }
+
+    moveMainCharacter() {
+        // -- Acceleration
+        if (this.mainCharacter.direction[1] < SHGRAVITY) {
+            this.mainCharacter.direction[1] += VERTICAL_SHTEP;
+        }
+
+        // -- Horizontal
+        const xMargin = this.mainCharacter.width / 4;
+        let newX = this.mainCharacter.position[0] + this.mainCharacter.direction[0];
+        this.mainCharacter.position[0] = newX;
+
+
+        if ((newX - xMargin > REFERENCE_WIDTH) || (newX + xMargin < 0)) {
+            // -- Auto turn
+            this.mainCharacter.turn();
+
+            // -- Passthrough (removed cause not as fun as expected)
+            // if (this.mainCharacter.direction[0] > 0) { this.mainCharacter.position[0] = 0; }
+            // else { this.mainCharacter.position[0] = REFERENCE_WIDTH; }
         }
 
         // -- Vertical
-        newPosition = this.mainCharacter.position[1] + this.mainCharacter.direction[1] - this.mainCharacter.boost;
-        if (newPosition - this.mainCharacter.height > this.canvas.height /*this.mainCharacter.height/2*/) {
-            console.debug("Death.");
-            zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Powerup 134 - Mutation 4
-            this.reinit();
-            // this.mainCharacter.direction[1] = 0;
-            // this.mainCharacter.position[1] = this.canvas.height - this.mainCharacter.height/2;
+        const yMargin = this.mainCharacter.height;
+        let newY = this.mainCharacter.position[1] + this.mainCharacter.direction[1] - this.mainCharacter.boost;
+        this.mainCharacter.position[1] = newY
+
+        if (newY - yMargin > REFERENCE_HEIGHT) {
+            // console.debug("Death.");
+            zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Death (Powerup 134 - Mutation 4)
+            this.initialize();
         }
-        else {
-            this.mainCharacter.position[1] = newPosition
+    }
+
+    engine() {
+        // Asteroids
+        this.manageAsteroidWaves();
+        this.moveAsteroids();
+
+        // Main Character
+        this.controlMainCharacter();
+
+        // Decrease temporary attributes
+        if (this.mainCharacter.boost > 0) {
+            this.mainCharacter.boost -= 1;
         }
+        if (this.mainCharacter.falling > 0) {
+            this.mainCharacter.falling -= 1;
+            if (this.mainCharacter.falling == 0) { this.mainCharacter.recovering = 2 * SHMECOND; }
+        }
+        if (this.mainCharacter.recovering > 0) {
+            this.mainCharacter.recovering -= 1; // recover from the fall
+        }
+        // if (!this.mainCharacter.falling && this.mainCharacter.powerMalus > 0) {
+        //     this.mainCharacter.powerMalus -= .01; // not decided yet if it should stay or not
+        // }
+
+        // -- Movements
+        this.tailMainCharacter();
+        this.moveMainCharacter();
 
         // Survival
         if (this.collisions()) {
-            console.debug("Immminent death.");
-            zzfx(...[2, , 416, , .01, .17, 4, .23, , , , , , .5, , .4, .02, .63, .02]); // Hit 183
+            // -- Immminent death
+            zzfx(...[2, , 416, , .01, .17, 4, .23, , , , , , .5, , .4, .02, .63, .02]); // Falling (Hit 183)
             this.mainCharacter.powerMalus += 2;
-            this.mainCharacter.falling = 30 * this.mainCharacter.powerMalus;
-            // this.mainCharacter.direction[0] = 0;
-            this.mainCharacter.boost = 16;
-            // this.score = Math.max(0, this.score - 20);
+            if (this.mainCharacter.recovering) {
+                this.mainCharacter.falling = SHMECOND * 4; // Death
+            }
+            else {
+                this.mainCharacter.falling = (SHMECOND / 2) * this.mainCharacter.powerMalus;
+            }
+            this.mainCharacter.boost = BOOST; // safe jumping effect on collision
+
             let sustain = this.mainCharacter.falling / 100;
             zzfx(...[2.29, 0, 110, .02, sustain, .38, , 1.38, , , , , .19, .3, , , .16, .51, .02, .34]); // Music 194
         }
+
     };
 
     // Graphics
     draw() {
         this.ctx.clearRect(0, 0, this.ctx.canvas.clientWidth, this.ctx.canvas.clientHeight);
         this.drawBackground();
-
         if (this.state == GAME_STATE.WAIT) {
             this.drawTheRainbow();
         }
-
         this.mainCharacter.draw(this.ctx, this.step);
         for (let asteroid of this.asteroids) {
             asteroid.draw(this.ctx, this.step);
         }
-        for (let asteroid of this.asteroidCorpses) {
-            asteroid.draw(this.ctx, this.step);
-        }
-
+        // for (let asteroid of this.asteroidCorpses) {
+        //     asteroid.draw(this.ctx, this.step);
+        // }
         this.drawScore();
-
         if (this.state == GAME_STATE.WAIT) {
             this.drawInstructions();
-        }
-        // requestAnimationFrame(() => this.draw());
-    }
-
-    drawInstructions() {
-        this.ctx.beginPath();
-        this.ctx.fillStyle = "white";
-        this.ctx.strokeStyle = "black";
-        this.ctx.textAlign = "center";
-        // this.ctx.font = "20px Arial";
-        // this.ctx.fillText("TAP SPACE", this.canvas.width / 4, this.canvas.height / 3 + 30);
-        // this.ctx.fillText("TO GO UP", this.canvas.width / 4, this.canvas.height / 3 + 60);
-        // this.ctx.fillText("PRESS SPACE", 3 * this.canvas.width / 4, this.canvas.height / 3 + 30);
-        // this.ctx.fillText("TO GO BACK", 3 * this.canvas.width / 4, this.canvas.height / 3 + 60);
-        this.ctx.font = "bolder 26px Arial";
-
-        this.ctx.fillText("TAP SPACE &", this.canvas.width / 2, 3 * this.canvas.height / 4);
-        this.ctx.fillText("DO NOT FALL", this.canvas.width / 2, 3 * this.canvas.height / 4 + 30);
-        this.ctx.closePath();
-    }
-
-    drawScore() {
-        if (this.score === null) {
-            return;
-        }
-        this.ctx.beginPath();
-        this.ctx.fillStyle = "white";
-        this.ctx.strokeStyle = "black";
-        this.ctx.textAlign = "center";
-        this.ctx.font = "60px Helvetica";
-        this.ctx.fillText(this.score, this.canvas.width / 2, this.canvas.height / 4 - 10);
-        this.ctx.closePath();
-
-        if (this.state == GAME_STATE.WAIT) {
-            const size = 140;
-
-            this.ctx.font = "20px Helvetica";
-            this.ctx.fillText("SCORE", this.canvas.width / 2, this.canvas.height / 4 - size / 2);
-
-            if (this.best !== null) {
-                this.ctx.font = "14px Arial";
-                let message = "BEST: " + this.best;
-                this.ctx.fillText(message, this.canvas.width / 2, this.canvas.height / 4 - size / 2 + 90);
-            }
-
-            this.ctx.beginPath();
-            this.ctx.fillStyle = null;
-            this.ctx.strokeStyle = "white";
-            this.ctx.rect(
-                this.canvas.width / 2 - size / 2,
-                this.canvas.height / 4 - 3 * size / 4,
-                size,
-                size
-            );
-            // ctx.fill();
-            this.ctx.stroke();
-            this.ctx.closePath();
         }
     }
 
     drawBackground() {
-        // if (this.state == GAME_STATE.WAIT) {}
-        // else if (this.state == GAME_STATE.PLAY) {}
-        let fadeSpeed = 200; // in steps
+        let fadeSpeed = FADE_SPEED;
         if (this.state == GAME_STATE.WAIT) {
-            fadeSpeed = 60;
+            fadeSpeed = PAUSE_TIME;
         }
 
-        let waver = 0;
         let intensity = 1;
-        if (this.step < fadeSpeed) {
-            intensity = this.step % fadeSpeed / fadeSpeed; // Fade in blue
-        }
+        let waver = 0;
 
-        if (this.state == GAME_STATE.PLAY && intensity == 1) { waver = Math.sin(this.step / 64); }
+        // @TODO fade
+        // @TODO wave
+        // if (this.step < fadeSpeed) {
+        //     intensity = this.step % fadeSpeed / fadeSpeed; // Fade in blue
+        // }
 
-        if (this.state == GAME_STATE.WAIT) {
-            intensity = 1 - intensity;
-        }
+        // if (this.state == GAME_STATE.PLAY && intensity == 1) { waver = Math.sin(this.step / 64); }
+
+        // if (this.state == GAME_STATE.WAIT) {
+        //     intensity = 1 - intensity;
+        // }
 
         this.ctx.beginPath();
         this.ctx.fillStyle = "rgba(0, 0, " + String(intensity * 40 + waver * 5) + ", 1)";
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillRect(0, 0, REFERENCE_WIDTH, REFERENCE_HEIGHT);
         this.ctx.closePath();
 
         // Stars
         const color = "rgba(255, 255, 255, " + String(intensity) + ")";
-        if (this.state == GAME_STATE.PLAY) {
-            let index = 0;
+        if (this.state == GAME_STATE.PLAY /*|| true*/) {
             for (let star of this.stars) {
-                this.ctx.beginPath();
-                this.ctx.lineWidth = 0;
-                this.ctx.fillStyle = color;//"white";
-                this.ctx.arc(
-                    star[0] * this.canvas.width,
-                    (star[1] * this.canvas.height + this.step) % this.canvas.height,
-                    1 * SQUARE_ROOT_2,
-                    0, Math.PI * 2, false);
-                this.ctx.fill();
-                this.ctx.closePath();
-                index += 1;
+                drawCenteredRound(
+                    this.ctx,
+                    star[0] * REFERENCE_WIDTH,
+                    (star[1] * REFERENCE_HEIGHT + this.step) % REFERENCE_HEIGHT,
+                    2,
+                    color
+                );
             }
         }
     }
 
     drawTheRainbow() {
         this.ctx.beginPath();
-        this.ctx.lineWidth = 1;
+        this.ctx.lineWidth = 2;
         this.ctx.strokeStyle = "white";
-        this.ctx.moveTo(0, this.canvas.height * .7);
-        this.ctx.lineTo(this.canvas.width / 2, this.canvas.height / 2);
+        this.ctx.moveTo(0, REFERENCE_HEIGHT * .7);
+        this.ctx.lineTo(REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 2);
         this.ctx.stroke();
         this.ctx.closePath();
 
@@ -813,66 +700,94 @@ class Game {
             this.ctx.beginPath();
             this.ctx.lineWidth = girth;
             this.ctx.strokeStyle = RAINBOW[i];
-            this.ctx.moveTo(this.canvas.width / 2, this.canvas.height / 2);
+            this.ctx.moveTo(REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 2);
             this.ctx.lineTo(
-                this.canvas.width + girth,
-                - RAINBOW.length * girth / 2 + this.canvas.height * .7 + i * girth);
+                REFERENCE_WIDTH + girth,
+                - RAINBOW.length * girth / 2 + REFERENCE_HEIGHT * .7 + i * girth);
             this.ctx.stroke();
             this.ctx.closePath();
         }
     }
-}
 
-// Control
-var CTRL_spacePressed = false;
-var CTRL_spacePressedTime = null;
-
-function keyDownHandler(e) {
-    if (e.key == " ") {
-        if (!CTRL_spacePressed) {
-            CTRL_spacePressed = true;
-            CTRL_spacePressedTime = Date.now();
+    drawScore() {
+        // this.score = 623; // debug value to remove
+        // this.best = 1623; // debug value to remove
+        if (this.score === null) {
+            return;
         }
-        // console.debug("Spacebar is pressed"); //DEBUG
-        // console.debug(CTRL_spacePressedTime); //DEBUG
+
+        const fontSize = 60;
+        this.ctx.font = String(fontSize) + "px Helvetica";
+        this.ctx.fillStyle = "white";
+        this.ctx.textAlign = "center";
+        this.ctx.fillText(this.score, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4);
+
+        // @TODO draw best score well centered
+        if (this.state == GAME_STATE.WAIT) {
+            //     this.ctx.font = "20px Helvetica";
+            //     this.ctx.fillText("SCORE", REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4);
+
+            if (this.best !== null) {
+                this.ctx.font = String(fontSize / 3) + "px Arial";
+                let message = "BEST: " + this.best;
+                this.ctx.fillText(message, REFERENCE_WIDTH / 2, REFERENCE_HEIGHT / 4 + fontSize * .6);
+            }
+
+            drawCenteredRect(
+                this.ctx, REFERENCE_WIDTH / 2,
+                REFERENCE_HEIGHT / 4,
+                fontSize * 2, fontSize * 2, null, "white"
+            );
+        }
+    }
+
+    drawInstructions() {
+        this.ctx.fillStyle = "white";
+        this.ctx.textAlign = "center";
+        let fontSize = 30;
+        this.ctx.font = "bolder " + String(fontSize) + "px Arial";
+        this.ctx.fillText("TAP SPACE", REFERENCE_WIDTH / 2, 3 * REFERENCE_HEIGHT / 4);
+        this.ctx.fillText("DO NOT FALL", REFERENCE_WIDTH / 2, 3 * REFERENCE_HEIGHT / 4 + fontSize * 1.3);
     }
 }
 
-function touchDownHandler(e) {
-    e.preventDefault();
+// Control
 
+var CTRL_spacePressed = false;
+var CTRL_spacePressedTime = null;
+
+function press() {
     if (!CTRL_spacePressed) {
         CTRL_spacePressed = true;
         CTRL_spacePressedTime = Date.now();
     }
-    // console.debug("Spacebar is pressed"); //DEBUG
-    // console.debug(CTRL_spacePressedTime); //DEBUG
 }
 
+function release() { CTRL_spacePressed = false; }
+
+function keyDownHandler(e) {
+    if (e.key == " ") { press(); }
+}
 function keyUpHandler(e) {
-    if (e.key == " ") {
-        CTRL_spacePressed = false;
-        // console.debug("Spacebar is not pressed"); //DEBUG
-    }
+    if (e.key == " ") { release(); }
+}
+
+function touchDownHandler(e) {
+    e.preventDefault();
+    press();
 }
 
 function touchUpDownHandler(e) {
     e.preventDefault();
-
-    CTRL_spacePressed = false;
+    release();
 }
 
 function main() {
     // -- Canvas
     let mainCanvas = document.createElement("canvas");
-
-    let referenceHeight = window.innerHeight;
-    let referenceWidth = window.innerWidth;
-    console.debug(referenceHeight); //DEBUG
-    console.debug(referenceWidth); //DEBUG
-
-    mainCanvas.height = referenceHeight;
-    mainCanvas.width = referenceHeight * 10 / 16;
+    let actualHeight = window.innerHeight;
+    mainCanvas.height = actualHeight;
+    mainCanvas.width = actualHeight * 10 / 16;
     document.body.appendChild(mainCanvas);
 
     // -- Control
@@ -882,13 +797,12 @@ function main() {
     document.addEventListener("touchend", touchUpDownHandler, false);
 
     // Run
-    console.debug("Let's run!"); //DEBUG
     let mainGame = new Game(mainCanvas);
+    mainGame.initialize();
     mainGame.run();
-    // let interval = setInterval(() => mainGame.run(), 100);
-    // mainGame.draw()
 }
 
 main();
 
-// zzfx(...[1.88,0,110,.05,3,.35,1,1.94,,,,,,.4,,,.15,.73,.09,.03]); // Music 230
+
+// @TODO fix ear size
