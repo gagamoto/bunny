@@ -178,11 +178,17 @@ class Character {
         this.falling = 0;
         this.powerMalus = 0;
 
-        this.width = SIZES.RABBIT; // @TODO remove
-        this.height = SIZES.RABBIT; // @TODO remove
+        this.width = SIZES.RABBIT; // @TODO remove?
+        this.height = SIZES.RABBIT; // @TODO remove?
         this.fifouTail = []; // drawing only
         this.waitShift = 0;
     };
+
+    turn() {
+        zzfx(...[1.52, , 201, .03, .03, .01, 3, 1.45, 36, , , , , .1, 4.7, , .04, , , .03]); // Turn (Blip 210)
+        this.turning = true;
+        this.direction[0] = -this.direction[0];
+    }
 
     draw(ctx, currentStep = 0) {
         // Reference square
@@ -403,17 +409,17 @@ class Game {
 
         this.handle_charming_float();
 
-        // if (this.state == GAME_STATE.WAIT && this.step > PAUSE_TIME) {
-        //     if (CTRL_spacePressed) {
-        //         this.CTRL_spaceWasPressed = true;
-        //     }
-        //     else if (this.CTRL_spaceWasPressed && !CTRL_spacePressed) {
-        //         this.switchGameState(GAME_STATE.PLAY);
-        //     }
-        // }
-        // else if (this.state == GAME_STATE.PLAY) {
-        //     this.engine();
-        // }
+        if (this.state == GAME_STATE.WAIT && this.step > PAUSE_TIME) {
+            if (CTRL_spacePressed) {
+                this.CTRL_spaceWasPressed = true;
+            }
+            else if (this.CTRL_spaceWasPressed && !CTRL_spacePressed) {
+                this.switchGameState(GAME_STATE.PLAY);
+            }
+        }
+        else if (this.state == GAME_STATE.PLAY) {
+            this.engine();
+        }
         this.draw();
         requestAnimationFrame(() => this.run());
     };
@@ -478,193 +484,198 @@ class Game {
         this.currentAsteroidsNum -= 1;
     }
 
-    engine() {
-        const tailStepSize = 4;
+    moveMainCharacter() {
+        const xMargin = this.mainCharacter.width / 4;
 
-        // Asteroids waves
-        // -- Clean-up
-        if (this.asteroidCorpses.length) {
-            if (
-                (this.asteroidCorpses.length > RAINBOW.length) ||
-                (this.step - this.asteroidCorpses[0].funeralStep > SHMECOND)
-            ) {
-                this.asteroidCorpses.shift; // cleaning one corpse per frame seems enough
-            }
-        }
-
-        // -- Creation @TODO clean
-        if (this.currentAsteroidsNum == 0) {
-            // console.debug("Burrying.");
-            this.asteroidCorpses = this.asteroidCorpses.concat(this.asteroids);
-
-            // console.debug("Initialize wave.");
-            this.asteroids = [];
-            const minNumAsteroids = 5;
-            let waveLength = minNumAsteroids + Math.floor(Math.random() * (RAINBOW.length - minNumAsteroids)); // fix
-
-            for (let i = 0; i < waveLength; i++) {
-                let color = RAINBOW[this.waveNum % RAINBOW.length];
-                let x = Math.floor(Math.random() * (REFERENCE_WIDTH / 2) + (REFERENCE_WIDTH / 4));
-                let y = 0 - i * this.params.VERTICAL_DELAY; // @TODO add randomness to delay
-                let asteroid = new Asteroids([x, y], color);
-                let horizontalDirection = Math.floor(Math.random() * this.params.SHGRAVITY);
-                if (x > REFERENCE_WIDTH / 2) {
-                    horizontalDirection = - horizontalDirection;
-                }
-                asteroid.direction[0] = horizontalDirection; // @TODO random + random position also
-                this.asteroids.push(asteroid);
-            }
-            this.currentAsteroidsNum = this.asteroids.length;
-            this.waveNum += 1;
-        }
-
-        // -- Movements
-        for (let asteroid of this.asteroids) {
-            if (!asteroid.still_alive) {
-                continue;
-            }
-            // -- Tail
-            if (this.step % (tailStepSize) == 0) {
-                let position = Object.assign({}, asteroid.position);
-                asteroid.fifouTail.push(
-                    [position[0], position[1], null]
-                );
-                if (asteroid.fifouTail.length > RAINBOW.length) {
-                    asteroid.fifouTail.shift();
-                }
-            }
-
-            // -- Horizontal
-            let newPosition = asteroid.position[0] + asteroid.direction[0];
-            if (false) { } // placeholder for fix if needed
-            else {
-                asteroid.position[0] = newPosition
-            }
-
-            // -- Vertical
-            if (asteroid.direction[1] < this.params.SHGRAVITY * 1.1) {
-                asteroid.direction[1] += this.params.FACTOR;
-            }
-
-            newPosition = asteroid.position[1] + asteroid.direction[1];
-            if (false) { } // placeholder for fix if needed
-            else {
-                asteroid.position[1] = newPosition
-            }
-
-            // -- Badaboum
-            if (
-                (asteroid.position[1] > REFERENCE_HEIGHT) ||
-                (asteroid.position[0] > REFERENCE_WIDTH) ||
-                (asteroid.position[0] < 0)
-            ) {
-                // console.debug("Badaboum.");
-                this.badaboum(asteroid);
-            }
-        }
-
-        // Control
-        if (!this.mainCharacter.falling) {
-            // -- U-turn
-            if (CTRL_spacePressed && !this.turning) {
-                if (Date.now() - CTRL_spacePressedTime > TURNING_DELAY) {
-                    this.turning = true;
-                    this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
-                    zzfx(...[1.52, , 201, .03, .03, .01, 3, 1.45, 36, , , , , .1, 4.7, , .04, , , .03]); // Turn (Blip 210)
-                }
-            }
-
-            // -- Boost
-            if (CTRL_spacePressed && !this.boosting) {
-                // SOUNDS.BOOST
-                this.mainCharacter.boost = this.params.BOOST - this.mainCharacter.powerMalus;
-                this.boosting = true;
-                let pitch = 80 + 80 * Math.random();
-                zzfx(...[1.27, , pitch, .02, .07, .09, 1, 1.23, 2.1, .8, , , , , , , .01, .97, .01, .18]); // Shoot 67
-            }
-            if (this.mainCharacter.position[1] < 0) {
-                this.mainCharacter.boost = 0;
-            }
-            if (!CTRL_spacePressed) {
-                this.boosting = false;
-                this.turning = false;
-            }
-        }
-
-        // Movements
-        if (this.mainCharacter.direction[1] < this.params.SHGRAVITY) {
-            this.mainCharacter.direction[1] += this.params.FACTOR;
-        }
-        if (this.mainCharacter.boost > 0) {
-            this.mainCharacter.boost -= Math.min(this.params.FACTOR, this.mainCharacter.boost);
-        }
-        if (this.mainCharacter.falling > 0) {
-            this.mainCharacter.falling -= this.params.FACTOR;
-        }
-        if (!this.mainCharacter.falling && this.mainCharacter.powerMalus > 0) {
-            this.mainCharacter.powerMalus -= .01;
-        }
-        // -- Tail
-        if (this.step % tailStepSize == 0) {
-            if (this.mainCharacter.falling) {
-                this.mainCharacter.fifouTail.shift();
-            }
-            else {
-                let tailIndex = this.step / tailStepSize % RAINBOW.length; // to retrieve color
-
-                let position = Object.assign({}, this.mainCharacter.position);
-                this.mainCharacter.fifouTail.push(
-                    [position[0], position[1], tailIndex]
-                );
-                if (this.mainCharacter.fifouTail.length > RAINBOW.length - this.mainCharacter.powerMalus) {
-                    this.mainCharacter.fifouTail.shift();
-                }
-            }
-        }
-
-        let newPosition = null;
         // -- Horizontal
-        newPosition = this.mainCharacter.position[0] + this.mainCharacter.direction[0];
-        if (
-            (newPosition - this.mainCharacter.width / 4 > REFERENCE_WIDTH) ||
-            (newPosition + this.mainCharacter.width / 4 < 0)
-        ) {
+        let newX = null;
+        newX = this.mainCharacter.position[0] + this.mainCharacter.direction[0];
+        if ((newX - xMargin > REFERENCE_WIDTH) || (newX + xMargin < 0)) {
             // -- Auto turn
-            // @TODO factorize turn()
-            zzfx(...[1.52, , 201, .03, .03, .01, 3, 1.45, 36, , , , , .1, 4.7, , .04, , , .03]); // Turn (Blip 210)
-            this.mainCharacter.turning = true;
-            this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
+            this.mainCharacter.turn();
 
-            // -- Passthrough: removed because not as fun as expected
+            // -- Passthrough (removed cause not as fun as expected)
             // if (this.mainCharacter.direction[0] > 0) { this.mainCharacter.position[0] = 0; }
             // else { this.mainCharacter.position[0] = REFERENCE_WIDTH; }
         }
         else {
-            this.mainCharacter.position[0] = newPosition
+            this.mainCharacter.position[0] = newX;
         }
+        /*
+                // -- Vertical
+                newPosition = this.mainCharacter.position[1] + this.mainCharacter.direction[1] - this.mainCharacter.boost;
+                if (newPosition - this.mainCharacter.height > REFERENCE_HEIGHT ) {
+                    // console.debug("Death.");
+                    zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Death (Powerup 134 - Mutation 4)
+                    this.initialize();
+                }
+                else {
+                    this.mainCharacter.position[1] = newPosition
+                }
+                */
+    }
 
-        // -- Vertical
-        newPosition = this.mainCharacter.position[1] + this.mainCharacter.direction[1] - this.mainCharacter.boost;
-        if (newPosition - this.mainCharacter.height > REFERENCE_HEIGHT /*this.mainCharacter.height/2*/) {
-            // console.debug("Death.");
-            zzfx(...[1.2, , 1, .03, .1, .67, 4, 1.64, , .1, 212, -0.01, , .3, , .1, , .52, .03]); // Death (Powerup 134 - Mutation 4)
-            this.initialize();
-        }
-        else {
-            this.mainCharacter.position[1] = newPosition
-        }
+    engine() {
+        const tailStepSize = 4;
+
+        /*        // Asteroids waves
+                // -- Clean-up
+                if (this.asteroidCorpses.length) {
+                    if (
+                        (this.asteroidCorpses.length > RAINBOW.length) ||
+                        (this.step - this.asteroidCorpses[0].funeralStep > SHMECOND)
+                    ) {
+                        this.asteroidCorpses.shift; // cleaning one corpse per frame seems enough
+                    }
+                }
+        
+                // -- Creation @TODO clean
+                if (this.currentAsteroidsNum == 0) {
+                    // console.debug("Burrying.");
+                    this.asteroidCorpses = this.asteroidCorpses.concat(this.asteroids);
+        
+                    // console.debug("Initialize wave.");
+                    this.asteroids = [];
+                    const minNumAsteroids = 5;
+                    let waveLength = minNumAsteroids + Math.floor(Math.random() * (RAINBOW.length - minNumAsteroids)); // fix
+        
+                    for (let i = 0; i < waveLength; i++) {
+                        let color = RAINBOW[this.waveNum % RAINBOW.length];
+                        let x = Math.floor(Math.random() * (REFERENCE_WIDTH / 2) + (REFERENCE_WIDTH / 4));
+                        let y = 0 - i * this.params.VERTICAL_DELAY; // @TODO add randomness to delay
+                        let asteroid = new Asteroids([x, y], color);
+                        let horizontalDirection = Math.floor(Math.random() * this.params.SHGRAVITY);
+                        if (x > REFERENCE_WIDTH / 2) {
+                            horizontalDirection = - horizontalDirection;
+                        }
+                        asteroid.direction[0] = horizontalDirection; // @TODO random + random position also
+                        this.asteroids.push(asteroid);
+                    }
+                    this.currentAsteroidsNum = this.asteroids.length;
+                    this.waveNum += 1;
+                }
+        
+                // -- Movements
+                for (let asteroid of this.asteroids) {
+                    if (!asteroid.still_alive) {
+                        continue;
+                    }
+                    // -- Tail
+                    if (this.step % (tailStepSize) == 0) {
+                        let position = Object.assign({}, asteroid.position);
+                        asteroid.fifouTail.push(
+                            [position[0], position[1], null]
+                        );
+                        if (asteroid.fifouTail.length > RAINBOW.length) {
+                            asteroid.fifouTail.shift();
+                        }
+                    }
+        
+                    // -- Horizontal
+                    let newPosition = asteroid.position[0] + asteroid.direction[0];
+                    if (false) { } // placeholder for fix if needed
+                    else {
+                        asteroid.position[0] = newPosition
+                    }
+        
+                    // -- Vertical
+                    if (asteroid.direction[1] < this.params.SHGRAVITY * 1.1) {
+                        asteroid.direction[1] += this.params.FACTOR;
+                    }
+        
+                    newPosition = asteroid.position[1] + asteroid.direction[1];
+                    if (false) { } // placeholder for fix if needed
+                    else {
+                        asteroid.position[1] = newPosition
+                    }
+        
+                    // -- Badaboum
+                    if (
+                        (asteroid.position[1] > REFERENCE_HEIGHT) ||
+                        (asteroid.position[0] > REFERENCE_WIDTH) ||
+                        (asteroid.position[0] < 0)
+                    ) {
+                        // console.debug("Badaboum.");
+                        this.badaboum(asteroid);
+                    }
+                }
+        */
+        /*
+                // Control
+                if (!this.mainCharacter.falling) {
+                    // -- U-turn
+                    if (CTRL_spacePressed && !this.turning) {
+                        if (Date.now() - CTRL_spacePressedTime > TURNING_DELAY) {
+                            this.turning = true;
+                            this.mainCharacter.direction[0] = -this.mainCharacter.direction[0];
+                            zzfx(...[1.52, , 201, .03, .03, .01, 3, 1.45, 36, , , , , .1, 4.7, , .04, , , .03]); // Turn (Blip 210)
+                        }
+                    }
+        
+                    // -- Boost
+                    if (CTRL_spacePressed && !this.boosting) {
+                        // SOUNDS.BOOST
+                        this.mainCharacter.boost = this.params.BOOST - this.mainCharacter.powerMalus;
+                        this.boosting = true;
+                        let pitch = 80 + 80 * Math.random();
+                        zzfx(...[1.27, , pitch, .02, .07, .09, 1, 1.23, 2.1, .8, , , , , , , .01, .97, .01, .18]); // Shoot 67
+                    }
+                    if (this.mainCharacter.position[1] < 0) {
+                        this.mainCharacter.boost = 0;
+                    }
+                    if (!CTRL_spacePressed) {
+                        this.boosting = false;
+                        this.turning = false;
+                    }
+                }
+        */
+        // Movements
+        /*
+                if (this.mainCharacter.direction[1] < this.params.SHGRAVITY) {
+                    this.mainCharacter.direction[1] += this.params.FACTOR;
+                }
+                if (this.mainCharacter.boost > 0) {
+                    this.mainCharacter.boost -= Math.min(this.params.FACTOR, this.mainCharacter.boost);
+                }
+                if (this.mainCharacter.falling > 0) {
+                    this.mainCharacter.falling -= this.params.FACTOR;
+                }
+                if (!this.mainCharacter.falling && this.mainCharacter.powerMalus > 0) {
+                    this.mainCharacter.powerMalus -= .01;
+                }
+                // -- Tail
+                if (this.step % tailStepSize == 0) {
+                    if (this.mainCharacter.falling) {
+                        this.mainCharacter.fifouTail.shift();
+                    }
+                    else {
+                        let tailIndex = this.step / tailStepSize % RAINBOW.length; // to retrieve color
+        
+                        let position = Object.assign({}, this.mainCharacter.position);
+                        this.mainCharacter.fifouTail.push(
+                            [position[0], position[1], tailIndex]
+                        );
+                        if (this.mainCharacter.fifouTail.length > RAINBOW.length - this.mainCharacter.powerMalus) {
+                            this.mainCharacter.fifouTail.shift();
+                        }
+                    }
+                }
+        */
+        this.moveMainCharacter();
 
         // Survival
-        if (this.collisions()) {
-            // console.debug("Immminent death.");
-            zzfx(...[2, , 416, , .01, .17, 4, .23, , , , , , .5, , .4, .02, .63, .02]); // Falling (Hit 183)
-            this.mainCharacter.powerMalus += 2;
-            this.mainCharacter.falling = (SHMECOND / 2) * this.mainCharacter.powerMalus;
-            this.mainCharacter.boost = this.params.BOOST; // safe jumping effect on collision
-
-            let sustain = this.mainCharacter.falling / 100;
-            zzfx(...[2.29, 0, 110, .02, sustain, .38, , 1.38, , , , , .19, .3, , , .16, .51, .02, .34]); // Music 194
-        }
+        /*
+                if (this.collisions()) {
+                    // console.debug("Immminent death.");
+                    zzfx(...[2, , 416, , .01, .17, 4, .23, , , , , , .5, , .4, .02, .63, .02]); // Falling (Hit 183)
+                    this.mainCharacter.powerMalus += 2;
+                    this.mainCharacter.falling = (SHMECOND / 2) * this.mainCharacter.powerMalus;
+                    this.mainCharacter.boost = this.params.BOOST; // safe jumping effect on collision
+        
+                    let sustain = this.mainCharacter.falling / 100;
+                    zzfx(...[2.29, 0, 110, .02, sustain, .38, , 1.38, , , , , .19, .3, , , .16, .51, .02, .34]); // Music 194
+                }
+        */
     };
 
     // Graphics
@@ -715,7 +726,7 @@ class Game {
 
         // Stars
         const color = "rgba(255, 255, 255, " + String(intensity) + ")";
-        if (this.state == GAME_STATE.PLAY || true) { // @TODO only in PLAY
+        if (this.state == GAME_STATE.PLAY /*|| true*/) {
             for (let star of this.stars) {
                 drawCenteredRound(
                     this.ctx,
