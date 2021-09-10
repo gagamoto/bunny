@@ -345,7 +345,6 @@ class Game {
             }
 
             // close enough (danger zone)
-            // @TODO color the danger zone?
             let limitSquareDistance = (rabbitRadius + asteroidRadius) * (rabbitRadius + asteroidRadius);
             let squareHorizontal = horizontalDistance * horizontalDistance;
             let squareVertical = verticalDistance * verticalDistance;
@@ -367,7 +366,7 @@ class Game {
                 (this.asteroidCorpses.length > RAINBOW.length) ||
                 (this.step - this.asteroidCorpses[0].funeralStep > SHMECOND)
             ) {
-                this.asteroidCorpses.shift; // cleaning one corpse per frame seems enough
+                this.asteroidCorpses.shift(); // cleaning one corpse per frame seems enough
             }
         }
 
@@ -384,9 +383,8 @@ class Game {
 
             for (let i = 0; i < waveLength; i++) {
                 let color = RAINBOW[this.waveNum % RAINBOW.length];
-                // x debug for debug = i * SIZES.ASTEROID_MAX
                 let x = Math.floor(Math.random() * (REFERENCE_WIDTH / 2) + (REFERENCE_WIDTH / 4));
-                let y = -SIZES.ASTEROID_MAX - i * VERTICAL_DELAY; // @TODO add randomness to delay
+                let y = -SIZES.ASTEROID_MAX - i * VERTICAL_DELAY;
                 let asteroid = new Asteroids([x, y], color);
 
                 let horizontalDirection = Math.floor(Math.random() * CRUISE_SPEED * 2);
@@ -594,9 +592,9 @@ class Game {
         for (let asteroid of this.asteroids) {
             asteroid.draw(this.ctx, this.step);
         }
-        // for (let asteroid of this.asteroidCorpses) {
-        //     asteroid.draw(this.ctx, this.step);
-        // }
+        for (let asteroid of this.asteroidCorpses) {
+            asteroid.draw(this.ctx, this.step);
+        }
         this.drawScore();
         if (this.state == GAME_STATE.WAIT) {
             this.drawInstructions();
@@ -755,5 +753,3 @@ function main() {
 }
 
 main();
-
-// @TODO fix ear size
